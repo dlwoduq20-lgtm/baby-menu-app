@@ -103,4 +103,18 @@ function OnboardingIngredientsForm() {
       <button
         onClick={handleFinish}
         disabled={submitting || loading}
-        className="mt-2 w-full rounded-pill
+        className="mt-2 w-full rounded-pill bg-coral-deep py-3.5 text-[15px] font-bold text-white disabled:opacity-60"
+      >
+        {submitting ? "저장 중..." : "시작하기"}
+      </button>
+    </div>
+  );
+}
+
+export default function OnboardingIngredientsPage() {
+  return (
+    <Suspense fallback={null}>
+      <OnboardingIngredientsForm />
+    </Suspense>
+  );
+}
