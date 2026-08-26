@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
@@ -29,7 +29,7 @@ function Chip({
   );
 }
 
-export default function AllergyPage() {
+function AllergyForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const babyId = searchParams.get("babyId");
@@ -117,5 +117,13 @@ export default function AllergyPage() {
         {submitting ? "저장 중..." : "다음"}
       </button>
     </div>
+  );
+}
+
+export default function AllergyPage() {
+  return (
+    <Suspense fallback={null}>
+      <AllergyForm />
+    </Suspense>
   );
 }
