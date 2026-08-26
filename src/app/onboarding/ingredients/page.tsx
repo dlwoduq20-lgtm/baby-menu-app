@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Ingredient } from "@/lib/types/ingredient";
 import { IngredientPicker } from "@/components/IngredientPicker";
 
 // STEP 5: 온보딩의 마지막 단계. 선택한 재료를 user_ingredients 테이블에 저장하고 홈으로 이동한다.
-export default function OnboardingIngredientsPage() {
+function OnboardingIngredientsForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const babyId = searchParams.get("babyId"); // 현재 단계에서는 사용하지 않지만 추후 아기별 초기 추천 트리거에 쓸 수 있어 유지
@@ -103,10 +103,4 @@ export default function OnboardingIngredientsPage() {
       <button
         onClick={handleFinish}
         disabled={submitting || loading}
-        className="mt-2 w-full rounded-pill bg-coral-deep py-3.5 text-[15px] font-bold text-white disabled:opacity-60"
-      >
-        {submitting ? "저장 중..." : "시작하기"}
-      </button>
-    </div>
-  );
-}
+        className="mt-2 w-full rounded-pill
