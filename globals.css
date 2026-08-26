@@ -1,0 +1,16 @@
+@import url("https://fonts.googleapis.com/css2?family=Jua&family=Gowun+Dodum&display=swap");
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-jua: "Jua", sans-serif;
+  --font-gowun: "Gowun Dodum", sans-serif;
+}
+
+html,
+body {
+  background: #ede6dc; /* 폰 프레임 바깥 배경 */
+  font-family: var(--font-gowun);
+  color: #3b2e28;
+}
