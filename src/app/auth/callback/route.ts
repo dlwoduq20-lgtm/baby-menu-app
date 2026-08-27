@@ -8,10 +8,22 @@ export async function GET(request: Request) {
 
   if (code) {
     const supabase = createClient();
-    await supabase.auth.exchangeCodeForSession(code);
+    const {
+      data: { session },
+    } = await supabase.auth.exchangeCodeForSession(code);
+
+    if (session?.user) {
+      const { data: babies } = await supabase
+        .from("babies")
+        .select("id")
+        .eq("user_id", session.user.id)
+        .limit(1);
+
+      if (babies && babies.length > 0) {
+        return NextResponse.redirect(`${origin}/home`);
+      }
+    }
   }
 
-  // 최초 로그인 사용자는 아기 등록으로, 기존 사용자는 홈으로 보내는 분기는
-  // STEP 4에서 babies 테이블 조회 결과에 따라 여기서 처리한다. 지금은 온보딩으로 고정.
   return NextResponse.redirect(`${origin}/onboarding/baby`);
 }
