@@ -5,10 +5,12 @@ import { cookies } from "next/headers";
 // "사용자별 데이터 분리"(스펙 5장)를 위해 모든 서버 데이터 조회는 이 클라이언트를 통해야 한다.
 export function createClient() {
   const cookieStore = cookies();
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://placeholder.supabase.co";
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "placeholder-anon-key";
 
   return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    url,
+    anonKey,
     {
       cookies: {
         get(name: string) {
