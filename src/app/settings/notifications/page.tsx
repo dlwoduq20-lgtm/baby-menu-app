@@ -54,8 +54,8 @@ export default function NotificationSettingsPage() {
       return;
     }
 
-    const registration = await navigator.serviceWorker.register("/sw.js");
-    await navigator.serviceWorker.ready;
+    // RootLayout에서 이미 등록해둔 서비스워커를 그대로 사용한다 (STEP 12).
+    const registration = await navigator.serviceWorker.ready;
 
     const subscription = await registration.pushManager.subscribe({
       userVisibleOnly: true,

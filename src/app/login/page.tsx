@@ -55,16 +55,15 @@ export default function LoginPage() {
         {loading === "google" ? "이동 중..." : "Google로 계속하기"}
       </button>
 
-      <button
-        disabled
-        title="네이버는 Custom OIDC 연동 후 활성화 예정"
-        className="flex w-full items-center gap-3 rounded-2xl border border-line bg-white px-[18px] py-3.5 text-[14.5px] text-ink-soft opacity-50"
+      <a
+        href="/api/auth/naver/login"
+        className="flex w-full items-center gap-3 rounded-2xl border border-line bg-white px-[18px] py-3.5 text-[14.5px]"
       >
         <span className="flex h-6.5 w-6.5 items-center justify-center rounded-lg bg-[#03C75A] text-sm font-bold text-white">
           N
         </span>
-        네이버로 계속하기 (준비 중)
-      </button>
+        네이버로 계속하기
+      </a>
     </div>
   );
 }
