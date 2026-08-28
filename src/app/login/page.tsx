@@ -1,12 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
 type Provider = "google" | "kakao";
 
-export default function LoginPage() {
+function LoginForm() {
   const [loading, setLoading] = useState<Provider | null>(null);
+  const searchParams = useSearchParams();
+  const urlError = searchParams.get("error");
   const supabase = createClient();
 
   async function handleLogin(provider: Provider) {
@@ -15,13 +18,16 @@ export default function LoginPage() {
       provider,
       options: {
         redirectTo: `${window.location.origin}/auth/callback`,
+        queryParams: provider === "google" ? {
+          access_type: "offline",
+          prompt: "consent",
+        } : undefined,
       },
     });
     if (error) {
       alert(`로그인 중 문제가 발생했어요: ${error.message}`);
       setLoading(null);
     }
-    // 성공 시 브라우저가 provider 로그인 화면으로 이동하므로 여기서 별도 처리 불필요.
   }
 
   return (
@@ -36,6 +42,12 @@ export default function LoginPage() {
         <br />
         안전하게 보관해 드려요.
       </p>
+
+      {urlError && (
+        <div className="mb-4 rounded-2xl border border-[#F4DFAE] bg-yellow-pale p-3.5 text-xs leading-relaxed text-[#7A5A16]">
+          ⚠️ <b>로그인 안내:</b> {decodeURIComponent(urlError)}
+        </div>
+      )}
 
       <button
         onClick={() => handleLogin("kakao")}
@@ -65,5 +77,13 @@ export default function LoginPage() {
         네이버로 계속하기
       </a>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <LoginForm />
+    </Suspense>
   );
 }
