@@ -13,11 +13,14 @@ export async function GET(request: Request) {
     return NextResponse.redirect(`${origin}/login?error=naver_state_mismatch`);
   }
 
+  const clientId = process.env.NAVER_CLIENT_ID || "dKJgp5e43l_rLNi3BQ1Z";
+  const clientSecret = process.env.NAVER_CLIENT_SECRET || "bWN5tbUuds";
+
   // 1) 인가 코드 → 액세스 토큰
   const tokenUrl = new URL("https://nid.naver.com/oauth2.0/token");
   tokenUrl.searchParams.set("grant_type", "authorization_code");
-  tokenUrl.searchParams.set("client_id", process.env.NAVER_CLIENT_ID!);
-  tokenUrl.searchParams.set("client_secret", process.env.NAVER_CLIENT_SECRET!);
+  tokenUrl.searchParams.set("client_id", clientId);
+  tokenUrl.searchParams.set("client_secret", clientSecret);
   tokenUrl.searchParams.set("code", code);
   tokenUrl.searchParams.set("state", state);
 
