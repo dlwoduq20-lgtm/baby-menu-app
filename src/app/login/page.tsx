@@ -18,6 +18,7 @@ function LoginForm() {
       provider,
       options: {
         redirectTo: `${window.location.origin}/auth/callback`,
+        scopes: provider === "kakao" ? "profile_nickname profile_image" : undefined,
         queryParams: provider === "google" ? {
           access_type: "offline",
           prompt: "consent",
