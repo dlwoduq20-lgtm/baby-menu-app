@@ -7,9 +7,18 @@ export async function GET(request: Request) {
   const { origin } = new URL(request.url);
   const state = randomBytes(16).toString("hex");
 
+  const clientId = process.env.NAVER_CLIENT_ID;
+  if (!clientId) {
+    return NextResponse.redirect(
+      `${origin}/login?error=${encodeURIComponent(
+        "Vercel 환경 변수에 NAVER_CLIENT_ID가 등록되지 않았거나 재배포가 필요합니다."
+      )}`
+    );
+  }
+
   const authorizeUrl = new URL("https://nid.naver.com/oauth2.0/authorize");
   authorizeUrl.searchParams.set("response_type", "code");
-  authorizeUrl.searchParams.set("client_id", process.env.NAVER_CLIENT_ID!);
+  authorizeUrl.searchParams.set("client_id", clientId);
   authorizeUrl.searchParams.set("redirect_uri", `${origin}/api/auth/naver/callback`);
   authorizeUrl.searchParams.set("state", state);
 
