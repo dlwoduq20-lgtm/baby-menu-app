@@ -19,6 +19,7 @@ export type Ingredient = {
   id: string;
   name: string;
   category: IngredientCategory;
+  primary_nutrients?: string[];
   created_at: string;
 };
 

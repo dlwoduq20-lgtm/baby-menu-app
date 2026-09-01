@@ -13,7 +13,7 @@ export async function fetchRecipeById(
   const [{ data: recipe, error: recipeError }, { data: ingredients }, { data: steps }, { data: nutrition }] =
     await Promise.all([
       supabase.from("recipes").select("*").eq("id", recipeId).single(),
-      supabase.from("recipe_ingredients").select("*, ingredient:ingredients(name, category)").eq("recipe_id", recipeId),
+      supabase.from("recipe_ingredients").select("*, ingredient:ingredients(name, category, primary_nutrients)").eq("recipe_id", recipeId),
       supabase.from("recipe_steps").select("*").eq("recipe_id", recipeId).order("step_number"),
       supabase.from("nutrition_data").select("*").eq("recipe_id", recipeId).maybeSingle(),
     ]);
@@ -32,7 +32,7 @@ export async function fetchAllRecipesWithDetails(supabase: SupabaseClient): Prom
   const [{ data: recipes, error: recipesError }, { data: ingredients }, { data: steps }, { data: nutrition }] =
     await Promise.all([
       supabase.from("recipes").select("*"),
-      supabase.from("recipe_ingredients").select("*, ingredient:ingredients(name, category)"),
+      supabase.from("recipe_ingredients").select("*, ingredient:ingredients(name, category, primary_nutrients)"),
       supabase.from("recipe_steps").select("*").order("step_number"),
       supabase.from("nutrition_data").select("*"),
     ]);

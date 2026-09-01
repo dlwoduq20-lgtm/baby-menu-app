@@ -21,7 +21,7 @@ export type RecipeIngredientRow = {
   unit: string;
   is_optional: boolean;
   // 조인해서 가져올 때 채워지는 필드 (스펙 12장: 재료명 표시용)
-  ingredient?: { name: string; category: string };
+  ingredient?: { name: string; category: string; primary_nutrients?: string[] };
 };
 
 export type RecipeStepRow = {
