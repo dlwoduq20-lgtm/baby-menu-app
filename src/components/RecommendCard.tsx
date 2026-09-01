@@ -1,6 +1,20 @@
 import Link from "next/link";
 import { ScoredRecipe } from "@/lib/recommend";
 
+function BowlIllustration({ quick }: { quick: boolean }) {
+  return (
+    <svg viewBox="0 0 92 92" className="h-[92px] w-[92px] shrink-0 rounded-[20px]" style={{ background: quick ? "#E3F4EA" : "#FCEBDA" }}>
+      <ellipse cx="46" cy="60" rx="34" ry="20" fill="#EADFC9" />
+      <ellipse cx="46" cy="54" rx="30" ry="16" fill="#FBEFD8" />
+      <circle cx="34" cy="50" r="5" fill="#D98A5F" />
+      <circle cx="48" cy="46" r="5.5" fill="#D98A5F" />
+      <circle cx="58" cy="52" r="4.5" fill="#8FBF6B" />
+      <circle cx="40" cy="58" r="4" fill="#8FBF6B" />
+      <circle cx="55" cy="60" r="4" fill="#E8A33A" />
+    </svg>
+  );
+}
+
 function MatchRing({ ratio }: { ratio: number }) {
   const color = ratio >= 1 ? "#5FB98C" : "#FFC94D";
   const track = ratio >= 1 ? "#E3F4EA" : "#FFF3D6";
@@ -40,10 +54,12 @@ export function RecommendCard({
     <div className="mb-4 rounded-card border border-line bg-white p-[18px] shadow-card">
       <div className="flex gap-3.5">
         <div
-          className={`h-[92px] w-[92px] shrink-0 rounded-[20px] ${
+          className={`h-[92px] w-[92px] shrink-0 overflow-hidden rounded-[20px] ${
             quick ? "bg-mint-pale" : "bg-cream-deep"
           }`}
-        />
+        >
+          <BowlIllustration quick={quick} />
+        </div>
         <div className="min-w-0 flex-1">
           <span
             className={`mb-1.5 inline-block rounded-pill px-2.5 py-1 text-[11px] font-bold ${

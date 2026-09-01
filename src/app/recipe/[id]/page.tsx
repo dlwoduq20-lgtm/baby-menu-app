@@ -2,6 +2,8 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { fetchRecipeById } from "@/lib/data/recipes";
+import { fetchNutritionTargets, findTargetForStage, coveragePercent } from "@/lib/data/nutritionTargets";
+import { calcAgeInMonths, getAgeStage } from "@/lib/babyAge";
 import { FeedbackBar } from "@/components/FeedbackBar";
 
 export default async function RecipeDetailPage({ params }: { params: { id: string } }) {
@@ -29,6 +31,18 @@ export default async function RecipeDetailPage({ params }: { params: { id: strin
     .eq("recipe_id", recipe.id)
     .maybeSingle();
 
+  const { data: babies } = await supabase.from("babies").select("*").eq("user_id", user.id).limit(1);
+  const baby = babies?.[0];
+  const babyAgeMonths = baby ? calcAgeInMonths(baby.birth_date) : null;
+  const babyStage = baby ? getAgeStage(babyAgeMonths!) : null;
+  const nutritionTargets = await fetchNutritionTargets(supabase);
+  const target = babyStage ? findTargetForStage(nutritionTargets, babyStage) : null;
+
+  // 이 레시피의 재료들이 채워주는 영양소 태그 (중복 제거)
+  const coveredNutrients = Array.from(
+    new Set(recipe.ingredients.flatMap((i) => i.ingredient?.primary_nutrients ?? []))
+  );
+
   const ageLabel = recipe.min_age_stage === "24+" ? "24개월+" : `${recipe.min_age_stage.replace("-", "~")}개월+`;
 
   return (
@@ -40,8 +54,16 @@ export default async function RecipeDetailPage({ params }: { params: { id: strin
         <h2 className="font-display text-lg">레시피 상세</h2>
       </div>
 
-      <div className="mx-5 mt-4.5 flex h-[150px] items-center justify-center rounded-[22px] bg-cream-deep text-5xl">
-        🍚
+      <div className="mx-5 mt-4.5 flex h-[150px] items-center justify-center overflow-hidden rounded-[22px] bg-cream-deep">
+        <svg width="100%" height="100%" viewBox="0 0 350 150" preserveAspectRatio="xMidYMid meet">
+          <ellipse cx="175" cy="112" rx="120" ry="28" fill="#EADFC9" />
+          <ellipse cx="175" cy="98" rx="105" ry="22" fill="#FBEFD8" />
+          <circle cx="140" cy="88" r="10" fill="#D98A5F" />
+          <circle cx="175" cy="80" r="11" fill="#D98A5F" />
+          <circle cx="210" cy="92" r="9" fill="#8FBF6B" />
+          <circle cx="155" cy="102" r="8" fill="#8FBF6B" />
+          <circle cx="195" cy="106" r="8" fill="#E8A33A" />
+        </svg>
       </div>
 
       <div className="flex flex-wrap gap-2 px-5 pt-4">
@@ -89,6 +111,19 @@ export default async function RecipeDetailPage({ params }: { params: { id: strin
         </div>
       </div>
 
+      {coveredNutrients.length > 0 && (
+        <div className="mx-5 mt-3 rounded-2xl bg-mint-pale p-3.5">
+          <div className="mb-1.5 text-[11.5px] font-bold text-[#2E8F5D]">🥕 이 재료들이 채워주는 영양소</div>
+          <div className="flex flex-wrap gap-1.5">
+            {coveredNutrients.map((n) => (
+              <span key={n} className="rounded-pill bg-white px-2.5 py-1 text-[11px] text-[#2E8F5D]">
+                {n}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div className="px-5 pt-4.5">
         <h3 className="mb-2.5 font-display text-[15.5px]">조리 순서</h3>
         <div>
@@ -110,20 +145,45 @@ export default async function RecipeDetailPage({ params }: { params: { id: strin
             <div>
               <div className="font-display text-sm">{recipe.nutrition.carbs_g ?? "-"}g</div>
               탄수화물
+              {target && (
+                <div className="mt-0.5 text-[10px] text-mint">
+                  일일 {coveragePercent(recipe.nutrition.carbs_g, target.dailyCarbsG) ?? "-"}%
+                </div>
+              )}
             </div>
             <div>
               <div className="font-display text-sm">{recipe.nutrition.protein_g ?? "-"}g</div>
               단백질
+              {target && (
+                <div className="mt-0.5 text-[10px] text-mint">
+                  일일 {coveragePercent(recipe.nutrition.protein_g, target.dailyProteinG) ?? "-"}%
+                </div>
+              )}
             </div>
             <div>
               <div className="font-display text-sm">{recipe.nutrition.fat_g ?? "-"}g</div>
               지방
+              {target && (
+                <div className="mt-0.5 text-[10px] text-mint">
+                  일일 {coveragePercent(recipe.nutrition.fat_g, target.dailyFatG) ?? "-"}%
+                </div>
+              )}
             </div>
             <div>
               <div className="font-display text-sm">{recipe.nutrition.fiber_g ?? "-"}g</div>
               식이섬유
+              {target && (
+                <div className="mt-0.5 text-[10px] text-mint">
+                  일일 {coveragePercent(recipe.nutrition.fiber_g, target.dailyFiberG) ?? "-"}%
+                </div>
+              )}
             </div>
           </div>
+          {target && (
+            <div className="mt-2 text-[10.5px] text-ink-soft">
+              이 메뉴 한 끼로 {babyAgeMonths}개월 아기 하루 권장 섭취량의 위 비율만큼을 채울 수 있어요.
+            </div>
+          )}
           {recipe.nutrition.key_micronutrients.length > 0 && (
             <div className="mt-2 text-xs text-ink-soft">
               주요 영양소: {recipe.nutrition.key_micronutrients.join(", ")}
