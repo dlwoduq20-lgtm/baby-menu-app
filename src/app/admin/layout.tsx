@@ -30,6 +30,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       <div className="mb-6 flex gap-4 border-b border-line pb-3 text-[13.5px] font-bold text-ink-soft">
         <Link href="/admin/recipes">레시피 관리</Link>
         <Link href="/admin/age-rules">월령별 안전 규칙 관리</Link>
+        <Link href="/admin/nutrition-targets">영양 목표치 관리</Link>
       </div>
       {children}
     </div>

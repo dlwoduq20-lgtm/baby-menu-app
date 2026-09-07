@@ -69,3 +69,19 @@ src/
 `users, babies, baby_allergies, baby_preferences, ingredients, user_ingredients, recipes,
 recipe_ingredients, nutrition_data, age_rules, recommendations, recommendation_feedback,
 favorites, notification_settings`
+
+---
+
+## 🆕 기능 업데이트 (2026-09-01)
+
+1. **매주 토요일 오전 10시 주간 식단 + 푸시** — `supabase/migrations/0010_weekly_plan.sql`(`weekly_meal_plans`/`weekly_meal_plan_items`), `src/lib/service/weeklyPlan.ts`(7일치 오늘의 추천+초간편을 한 번에 계산, 같은 주는 재사용), `src/app/api/cron/send-weekly-plan/route.ts` + `vercel.json`에 `0 1 * * 6`(=KST 토 10:00) 크론 추가.
+2. **영양 커버리지 강조** — `supabase/migrations/0007_ingredient_nutrients.sql`(재료별 `primary_nutrients` 태그), `0008_nutrition_targets.sql`(월령별 하루 권장 섭취 목표, **초안 값이니 반드시 관리자 화면에서 검증 후 사용**), `/weekly`에서 이번 주 전체 커버리지를, `/recipe/[id]`에서 끼니별 커버리지를 %로 표시.
+3. **장보기 리스트** — `/shopping-list`, 이번 주 식단에 필요한데 안 가진 재료를 카테고리·수량과 함께 집계.
+4. **일별 식단(레시피 상세)에도 영양 강조** — 재료가 채워주는 영양소 칩 + 하루 권장량 대비 % 추가.
+5. **폰트 표준화** — `globals.css`에서 Jua/Gowun Dodum(장식 폰트) 제거, `-apple-system` 기반 표준 시스템 폰트 스택으로 전면 교체.
+6. 레시피 다양성을 위해 `0009_more_recipes.sql`로 5개 레시피 추가 (총 8종).
+7. `/admin/nutrition-targets` 관리자 화면 추가 — 영양 목표치를 언제든 검증된 값으로 교체 가능.
+
+**새 마이그레이션 실행 순서**: 기존 `0001~0006`을 이미 실행했다면, 이어서 `0007_ingredient_nutrients.sql` → `0008_nutrition_targets.sql` → `0009_more_recipes.sql` → `0010_weekly_plan.sql` 순서로 SQL Editor에서 실행하면 됩니다.
+
+⚠️ **`nutrition_targets`의 시드 값은 실제 소아영양 기준으로 검증되지 않은 초안**입니다. 실서비스 배포 전 반드시 `/admin/nutrition-targets`에서 신뢰할 수 있는 출처의 수치로 교체해 주세요.
