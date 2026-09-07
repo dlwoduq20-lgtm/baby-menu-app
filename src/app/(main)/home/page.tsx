@@ -49,6 +49,19 @@ export default async function HomePage() {
       </div>
 
       <div className="px-[22px]">
+        <Link
+          href="/weekly"
+          className="mb-5 mt-5 flex items-center justify-between rounded-2xl border border-coral-pale bg-coral-pale/40 p-4"
+        >
+          <div>
+            <div className="font-display text-[14.5px] text-coral-deep">🗓️ 이번 주 식단 & 장보기 리스트</div>
+            <div className="mt-0.5 text-[11.5px] text-ink-soft">
+              {baby.name}이 영양 커버리지와 장보기 리스트를 한번에 확인해보세요
+            </div>
+          </div>
+          <span className="text-coral-deep">→</span>
+        </Link>
+
         {ageStage === "0-5" ? (
           <div className="mt-6 rounded-2xl border border-line bg-white p-5 text-[13.5px] text-ink-soft">
             이 서비스는 만 6개월 이상 아기를 기준으로 메뉴를 추천해요. 그 이전 시기의 수유/이유식 시작은
