@@ -1,8 +1,8 @@
 // STEP 10: 오후 4시 푸시 수신. STEP 12: 오프라인 캐싱 + 홈 화면 설치 지원 추가.
 
-const CACHE_NAME = "baby-menu-app-v1";
+const CACHE_NAME = "baby-menu-app-v2";
 const OFFLINE_URL = "/home";
-const PRECACHE_URLS = ["/home", "/manifest.json", "/icon-192.png", "/icon-512.png"];
+const PRECACHE_URLS = ["/home", "/weekly", "/manifest.json", "/icon-192.png", "/icon-512.png"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
@@ -19,7 +19,7 @@ self.addEventListener("activate", (event) => {
   );
 });
 
-// 페이지 이동: 네트워크 우선, 실패하면 캐시된 홈 화면으로 대체 (완전 오프라인에서도 뭔가는 뜨도록)
+// 페이지 이동: 네트워크 우선, 오프라인이면 해당 페이지 캐시 -> 없으면 홈 화면으로 대체
 // 정적 자산(js/css/이미지): 캐시 우선, 없으면 네트워크 요청 후 캐시에 저장
 self.addEventListener("fetch", (event) => {
   const { request } = event;
@@ -29,7 +29,7 @@ self.addEventListener("fetch", (event) => {
 
   if (isNavigation) {
     event.respondWith(
-      fetch(request).catch(() => caches.match(OFFLINE_URL).then((res) => res || caches.match(request)))
+      fetch(request).catch(() => caches.match(request).then((res) => res || caches.match(OFFLINE_URL)))
     );
     return;
   }

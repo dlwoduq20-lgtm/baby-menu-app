@@ -43,12 +43,16 @@ export async function GET(request: Request) {
   }
 
   // 3) Supabase 사용자 확보 + 매직링크 발급 (STEP 3에서 만든 카카오/구글과 동일한 users 테이블로 합류)
+  const rawNext = request.headers.get("cookie")?.match(/naver_oauth_next=([^;]+)/)?.[1];
+  const next = rawNext ? decodeURIComponent(rawNext) : "/home";
+  const safeNext = next.startsWith("/") && !next.startsWith("//") ? next : "/home";
+
   const admin = createAdminClient();
   const { data: linkData, error: linkError } = await admin.auth.admin.generateLink({
     type: "magiclink",
     email,
     options: {
-      redirectTo: `${origin}/auth/callback`,
+      redirectTo: `${origin}/auth/callback?next=${encodeURIComponent(safeNext)}`,
       data: { full_name: name, provider: "naver" },
     },
   });

@@ -10,6 +10,8 @@ export async function GET(request: Request) {
   const code = searchParams.get("code");
   const token_hash = searchParams.get("token_hash");
   const type = searchParams.get("type") as EmailOtpType | null;
+  const rawNext = searchParams.get("next") || "/home";
+  const next = rawNext.startsWith("/") && !rawNext.startsWith("//") ? rawNext : "/home";
 
   if (error) {
     return NextResponse.redirect(
@@ -39,7 +41,7 @@ export async function GET(request: Request) {
         .limit(1);
 
       if (babies && babies.length > 0) {
-        return NextResponse.redirect(`${origin}/home`);
+        return NextResponse.redirect(`${origin}${next}`);
       }
     }
   } else if (token_hash && type) {
@@ -65,7 +67,7 @@ export async function GET(request: Request) {
         .limit(1);
 
       if (babies && babies.length > 0) {
-        return NextResponse.redirect(`${origin}/home`);
+        return NextResponse.redirect(`${origin}${next}`);
       }
     }
   }

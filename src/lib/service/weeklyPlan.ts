@@ -88,22 +88,27 @@ export async function computeWeeklyPlan(supabase: SupabaseClient, userId: string
     .filter((n): n is string => Boolean(n));
 
   // 이미 이번 주 식단이 있으면 재사용
-  const { data: existingPlan } = await supabase
-    .from("weekly_meal_plans")
-    .select("id")
-    .eq("baby_id", baby.id)
-    .eq("week_start_date", weekStartISO)
-    .maybeSingle();
+  let dayRecipeIds: { dayOffset: number; mealType: "main" | "quick"; recipeId: string }[] = [];
+  try {
+    const { data: existingPlan } = await supabase
+      .from("weekly_meal_plans")
+      .select("id")
+      .eq("baby_id", baby.id)
+      .eq("week_start_date", weekStartISO)
+      .maybeSingle();
 
-  let dayRecipeIds: { dayOffset: number; mealType: "main" | "quick"; recipeId: string }[];
+    if (existingPlan) {
+      const { data: items } = await supabase
+        .from("weekly_meal_plan_items")
+        .select("day_offset, meal_type, recipe_id")
+        .eq("plan_id", existingPlan.id);
+      dayRecipeIds = (items ?? []).map((i) => ({ dayOffset: i.day_offset, mealType: i.meal_type, recipeId: i.recipe_id }));
+    }
+  } catch (e) {
+    console.warn("Failed to read existing weekly meal plan from DB, computing fresh plan:", e);
+  }
 
-  if (existingPlan) {
-    const { data: items } = await supabase
-      .from("weekly_meal_plan_items")
-      .select("day_offset, meal_type, recipe_id")
-      .eq("plan_id", existingPlan.id);
-    dayRecipeIds = (items ?? []).map((i) => ({ dayOffset: i.day_offset, mealType: i.meal_type, recipeId: i.recipe_id }));
-  } else {
+  if (dayRecipeIds.length === 0) {
     const engineRecipes = recipes.map(toEngineRecipe);
     const babyForEngine = { ageStage, allergies: (allergyRows ?? []).map((r) => r.allergen), dislikedFoods: [] };
     const usedThisWeek = new Set<string>();
@@ -130,19 +135,23 @@ export async function computeWeeklyPlan(supabase: SupabaseClient, userId: string
       }
     }
 
-    const { data: planRow } = await supabase
-      .from("weekly_meal_plans")
-      .upsert({ user_id: userId, baby_id: baby.id, week_start_date: weekStartISO }, { onConflict: "baby_id,week_start_date" })
-      .select("id")
-      .single();
+    try {
+      const { data: planRow } = await supabase
+        .from("weekly_meal_plans")
+        .upsert({ user_id: userId, baby_id: baby.id, week_start_date: weekStartISO }, { onConflict: "baby_id,week_start_date" })
+        .select("id")
+        .maybeSingle();
 
-    if (planRow) {
-      await supabase.from("weekly_meal_plan_items").delete().eq("plan_id", planRow.id);
-      if (dayRecipeIds.length > 0) {
-        await supabase.from("weekly_meal_plan_items").insert(
-          dayRecipeIds.map((d) => ({ plan_id: planRow.id, day_offset: d.dayOffset, meal_type: d.mealType, recipe_id: d.recipeId }))
-        );
+      if (planRow) {
+        await supabase.from("weekly_meal_plan_items").delete().eq("plan_id", planRow.id);
+        if (dayRecipeIds.length > 0) {
+          await supabase.from("weekly_meal_plan_items").insert(
+            dayRecipeIds.map((d) => ({ plan_id: planRow.id, day_offset: d.dayOffset, meal_type: d.mealType, recipe_id: d.recipeId }))
+          );
+        }
       }
+    } catch (e) {
+      console.warn("Failed to persist weekly meal plan to DB (continuing in-memory):", e);
     }
   }
 

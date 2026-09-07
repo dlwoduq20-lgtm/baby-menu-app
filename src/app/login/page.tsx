@@ -10,14 +10,19 @@ function LoginForm() {
   const [loading, setLoading] = useState<Provider | null>(null);
   const searchParams = useSearchParams();
   const urlError = searchParams.get("error");
+  const nextParam = searchParams.get("next");
   const supabase = createClient();
 
   async function handleLogin(provider: Provider) {
     setLoading(provider);
+    const callbackUrl = new URL(`${window.location.origin}/auth/callback`);
+    if (nextParam) {
+      callbackUrl.searchParams.set("next", nextParam);
+    }
     const { error } = await supabase.auth.signInWithOAuth({
       provider,
       options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
+        redirectTo: callbackUrl.toString(),
         scopes: provider === "kakao" ? "profile_nickname profile_image" : undefined,
         queryParams: provider === "google" ? {
           access_type: "offline",
@@ -69,7 +74,7 @@ function LoginForm() {
       </button>
 
       <a
-        href="/api/auth/naver/login"
+        href={nextParam ? `/api/auth/naver/login?next=${encodeURIComponent(nextParam)}` : "/api/auth/naver/login"}
         className="flex w-full items-center gap-3 rounded-2xl border border-line bg-white px-[18px] py-3.5 text-[14.5px]"
       >
         <span className="flex h-6.5 w-6.5 items-center justify-center rounded-lg bg-[#03C75A] text-sm font-bold text-white">
