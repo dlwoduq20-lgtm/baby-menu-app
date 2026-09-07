@@ -66,7 +66,7 @@ export default async function RecipeDetailPage({ params }: { params: { id: strin
         </svg>
       </div>
 
-      <div className="flex flex-wrap gap-2 px-5 pt-4">
+      <div className="flex flex-wrap gap-2 px-5 pb-1 pt-4">
         <span className="rounded-pill border border-coral-pale bg-coral-pale px-3 py-1.5 text-xs font-bold text-coral-deep">
           {ageLabel}
         </span>
@@ -82,13 +82,13 @@ export default async function RecipeDetailPage({ params }: { params: { id: strin
         </span>
       </div>
 
-      <div className="px-5 pt-4.5">
+      <div className="px-5 pb-1 pt-3">
         <h1 className="font-display text-xl">{recipe.name}</h1>
       </div>
 
       <FeedbackBar recipeId={recipe.id} initialFavorited={Boolean(favoriteRow)} />
 
-      <div className="px-5 pt-4.5">
+      <div className="px-5 pt-2">
         <h3 className="mb-2.5 font-display text-[15.5px]">재료</h3>
         <div className="flex flex-col gap-2">
           {recipe.ingredients.map((ing) => {
@@ -112,8 +112,8 @@ export default async function RecipeDetailPage({ params }: { params: { id: strin
       </div>
 
       {coveredNutrients.length > 0 && (
-        <div className="mx-5 mt-3 rounded-2xl bg-mint-pale p-3.5">
-          <div className="mb-1.5 text-[11.5px] font-bold text-[#2E8F5D]">🥕 이 재료들이 채워주는 영양소</div>
+        <div className="mx-5 mb-1 mt-5 rounded-2xl bg-mint-pale p-4">
+          <div className="mb-2 text-[11.5px] font-bold text-[#2E8F5D]">🥕 이 재료들이 채워주는 영양소</div>
           <div className="flex flex-wrap gap-1.5">
             {coveredNutrients.map((n) => (
               <span key={n} className="rounded-pill bg-white px-2.5 py-1 text-[11px] text-[#2E8F5D]">
@@ -124,7 +124,7 @@ export default async function RecipeDetailPage({ params }: { params: { id: strin
         </div>
       )}
 
-      <div className="px-5 pt-4.5">
+      <div className="px-5 pt-5">
         <h3 className="mb-2.5 font-display text-[15.5px]">조리 순서</h3>
         <div>
           {recipe.steps.map((step) => (

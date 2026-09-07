@@ -79,7 +79,7 @@ export function FeedbackBar({ recipeId, initialFavorited }: { recipeId: string; 
   ];
 
   return (
-    <div className="px-5 pb-2 pt-4.5">
+    <div className="px-5 pb-3 pt-2">
       <div className="mb-2 flex justify-between gap-2">
         {buttons.map((b) => (
           <button
