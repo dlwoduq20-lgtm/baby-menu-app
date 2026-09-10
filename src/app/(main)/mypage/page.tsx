@@ -42,6 +42,9 @@ export default async function MyPage() {
         <Link href="/settings/notifications" className="rounded-2xl border border-line bg-white p-4 text-[13.5px]">
           🔔 알림 설정
         </Link>
+        <Link href="/privacy" className="rounded-2xl border border-line bg-white p-4 text-[13.5px]">
+          📄 개인정보처리방침
+        </Link>
       </div>
 
       <LogoutButton />

@@ -1,6 +1,7 @@
 "use client";
 
 import { Suspense, useState } from "react";
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
@@ -82,6 +83,12 @@ function LoginForm() {
         </span>
         네이버로 계속하기
       </a>
+
+      <div className="mt-8 text-center">
+        <Link href="/privacy" className="text-xs text-ink-soft hover:underline">
+          개인정보처리방침
+        </Link>
+      </div>
     </div>
   );
 }
