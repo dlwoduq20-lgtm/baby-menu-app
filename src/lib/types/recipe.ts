@@ -10,6 +10,7 @@ export type RecipeRow = {
   allergens: string[];
   choking_hazard_note: string | null;
   caution_note: string | null;
+  image_url: string | null;
   created_at: string;
 };
 

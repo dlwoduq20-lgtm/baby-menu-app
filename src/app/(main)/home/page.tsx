@@ -37,7 +37,7 @@ export default async function HomePage() {
     <div className="mx-auto min-h-screen max-w-[430px] bg-cream pb-8">
       <div className="relative overflow-hidden bg-gradient-to-b from-cream-deep to-cream px-[22px] pb-[26px] pt-11">
         <span className="mb-4 inline-flex items-center gap-2 rounded-pill bg-white px-3.5 py-1.5 pr-3.5 text-[13px] text-ink-soft shadow-sm">
-          <span className="flex h-6.5 w-6.5 items-center justify-center rounded-full bg-coral-pale text-sm">🐣</span>
+          <span className="flex h-7 w-7 items-center justify-center rounded-full bg-coral-pale text-sm">🐣</span>
           {baby.name}아 · 현재 {ageMonths}개월 ({AGE_STAGE_LABEL[ageStage]})
         </span>
         <h1 className="font-display text-[26px] leading-snug">

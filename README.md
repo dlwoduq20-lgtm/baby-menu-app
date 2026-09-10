@@ -85,3 +85,15 @@ favorites, notification_settings`
 **새 마이그레이션 실행 순서**: 기존 `0001~0006`을 이미 실행했다면, 이어서 `0007_ingredient_nutrients.sql` → `0008_nutrition_targets.sql` → `0009_more_recipes.sql` → `0010_weekly_plan.sql` 순서로 SQL Editor에서 실행하면 됩니다.
 
 ⚠️ **`nutrition_targets`의 시드 값은 실제 소아영양 기준으로 검증되지 않은 초안**입니다. 실서비스 배포 전 반드시 `/admin/nutrition-targets`에서 신뢰할 수 있는 출처의 수치로 교체해 주세요.
+
+## 🆕 레시피 실제 사진 업로드 (0011_recipe_images.sql)
+- `recipes.image_url` 컬럼 추가 + Supabase Storage에 공개 버킷 `recipe-images` 생성
+- `/admin/recipes/[id]`에서 사진 파일(jpg/png/webp, 5MB 이하)을 직접 업로드 가능 → 업로드 즉시 홈 화면 카드와 레시피 상세 화면에 반영
+- 사진이 없는 레시피는 기존 일러스트가 자동으로 대체 표시됨
+- 업로드는 관리자 API 경유(서비스 롤)로만 가능하도록 제한
+
+## ⚠️ 중요 — 2026-09-10 동기화 메모
+이 시점부터는 사용자가 직접 다운로드한 실제 GitHub 저장소 zip을 기준으로 작업했습니다.
+그 이전에 안내했던 몇 가지 수정사항(레시피 상세 화면 여백 버그 `pt-4.5`→`pt-5` 등)이 실제로는
+반영되지 않은 채 남아있었던 것을 이번에 발견해 함께 수정했습니다. 작업 이력이 헷갈리면
+Vercel 배포 로그나 실제 파일 내용을 기준으로 판단하는 것이 안전합니다.

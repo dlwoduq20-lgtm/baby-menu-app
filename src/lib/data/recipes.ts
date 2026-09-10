@@ -17,6 +17,7 @@ export const DEFAULT_RECIPES: RecipeWithDetails[] = [
     choking_hazard_note: "고기와 채소를 아기가 씹기 좋은 크기로 다졌는지 확인하세요.",
     caution_note: "나트륨 함량이 낮도록 간을 최소화했어요.",
     created_at: "2026-01-01T00:00:00.000Z",
+    image_url: null,
     ingredients: [
       { id: "i1", recipe_id: "rec-beef-zucchini", ingredient_id: "ing-beef", quantity: 40, unit: "g", is_optional: false, ingredient: { name: "소고기", category: "육류", primary_nutrients: ["단백질", "철분", "아연"] } },
       { id: "i2", recipe_id: "rec-beef-zucchini", ingredient_id: "ing-zucchini", quantity: 30, unit: "g", is_optional: false, ingredient: { name: "애호박", category: "채소", primary_nutrients: ["비타민A", "식이섬유"] } },
@@ -51,6 +52,7 @@ export const DEFAULT_RECIPES: RecipeWithDetails[] = [
     choking_hazard_note: null,
     caution_note: "완전히 익혀서 제공하세요 (반숙 금지).",
     created_at: "2026-01-01T00:00:00.000Z",
+    image_url: null,
     ingredients: [
       { id: "i5", recipe_id: "rec-tofu-egg", ingredient_id: "ing-tofu", quantity: 50, unit: "g", is_optional: false, ingredient: { name: "두부", category: "두부/콩", primary_nutrients: ["단백질", "칼슘"] } },
       { id: "i6", recipe_id: "rec-tofu-egg", ingredient_id: "ing-egg", quantity: 1, unit: "개", is_optional: false, ingredient: { name: "계란", category: "달걀", primary_nutrients: ["단백질", "콜린"] } },
@@ -82,6 +84,7 @@ export const DEFAULT_RECIPES: RecipeWithDetails[] = [
     choking_hazard_note: null,
     caution_note: "계란은 완전히 익혀서 사용하세요.",
     created_at: "2026-01-01T00:00:00.000Z",
+    image_url: null,
     ingredients: [
       { id: "i7", recipe_id: "rec-egg-rice", ingredient_id: "ing-rice", quantity: 70, unit: "g", is_optional: false, ingredient: { name: "밥", category: "곡류", primary_nutrients: ["탄수화물"] } },
       { id: "i8", recipe_id: "rec-egg-rice", ingredient_id: "ing-egg", quantity: 1, unit: "개", is_optional: false, ingredient: { name: "계란", category: "달걀", primary_nutrients: ["단백질", "콜린"] } },
@@ -112,6 +115,7 @@ export const DEFAULT_RECIPES: RecipeWithDetails[] = [
     choking_hazard_note: "닭고기는 결대로 잘게 찢어서 제공하세요.",
     caution_note: null,
     created_at: "2026-01-01T00:00:00.000Z",
+    image_url: null,
     ingredients: [
       { id: "i9", recipe_id: "rec-chicken-porridge", ingredient_id: "ing-chicken", quantity: 40, unit: "g", is_optional: false, ingredient: { name: "닭가슴살", category: "육류", primary_nutrients: ["단백질"] } },
       { id: "i10", recipe_id: "rec-chicken-porridge", ingredient_id: "ing-carrot", quantity: 20, unit: "g", is_optional: false, ingredient: { name: "당근", category: "채소", primary_nutrients: ["비타민A"] } },
@@ -145,6 +149,7 @@ export const DEFAULT_RECIPES: RecipeWithDetails[] = [
     choking_hazard_note: "연어 가시가 없는지 확인하고 브로콜리는 잘게 썰어 제공하세요.",
     caution_note: null,
     created_at: "2026-01-01T00:00:00.000Z",
+    image_url: null,
     ingredients: [
       { id: "i13", recipe_id: "rec-salmon-broccoli", ingredient_id: "ing-salmon", quantity: 40, unit: "g", is_optional: false, ingredient: { name: "연어", category: "생선", primary_nutrients: ["단백질", "오메가-3"] } },
       { id: "i14", recipe_id: "rec-salmon-broccoli", ingredient_id: "ing-broccoli", quantity: 30, unit: "g", is_optional: false, ingredient: { name: "브로콜리", category: "채소", primary_nutrients: ["비타민C", "식이섬유"] } },
@@ -177,6 +182,7 @@ export const DEFAULT_RECIPES: RecipeWithDetails[] = [
     choking_hazard_note: null,
     caution_note: "기름은 소량만 사용하세요.",
     created_at: "2026-01-01T00:00:00.000Z",
+    image_url: null,
     ingredients: [
       { id: "i16", recipe_id: "rec-tofu-friedrice", ingredient_id: "ing-tofu", quantity: 50, unit: "g", is_optional: false, ingredient: { name: "두부", category: "두부/콩", primary_nutrients: ["단백질", "칼슘"] } },
       { id: "i17", recipe_id: "rec-tofu-friedrice", ingredient_id: "ing-carrot", quantity: 15, unit: "g", is_optional: false, ingredient: { name: "당근", category: "채소", primary_nutrients: ["비타민A"] } },
@@ -210,6 +216,7 @@ export const DEFAULT_RECIPES: RecipeWithDetails[] = [
     choking_hazard_note: null,
     caution_note: "무가당 플레인 요거트를 사용하세요.",
     created_at: "2026-01-01T00:00:00.000Z",
+    image_url: null,
     ingredients: [
       { id: "i20", recipe_id: "rec-banana-yogurt", ingredient_id: "ing-banana", quantity: 50, unit: "g", is_optional: false, ingredient: { name: "바나나", category: "과일", primary_nutrients: ["칼륨", "식이섬유"] } },
       { id: "i21", recipe_id: "rec-banana-yogurt", ingredient_id: "ing-yogurt", quantity: 60, unit: "g", is_optional: false, ingredient: { name: "플레인요거트", category: "유제품", primary_nutrients: ["칼슘", "단백질"] } },
@@ -240,6 +247,7 @@ export const DEFAULT_RECIPES: RecipeWithDetails[] = [
     choking_hazard_note: "한입 크기로 작게 뭉쳐서 제공하세요.",
     caution_note: "참치는 기름기를 잘 빼고 사용하세요.",
     created_at: "2026-01-01T00:00:00.000Z",
+    image_url: null,
     ingredients: [
       { id: "i22", recipe_id: "rec-tuna-riceball", ingredient_id: "ing-tuna", quantity: 30, unit: "g", is_optional: false, ingredient: { name: "참치", category: "생선", primary_nutrients: ["단백질", "오메가-3"] } },
       { id: "i23", recipe_id: "rec-tuna-riceball", ingredient_id: "ing-rice", quantity: 70, unit: "g", is_optional: false, ingredient: { name: "밥", category: "곡류", primary_nutrients: ["탄수화물"] } },

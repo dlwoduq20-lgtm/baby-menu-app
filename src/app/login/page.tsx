@@ -60,7 +60,7 @@ function LoginForm() {
         disabled={loading !== null}
         className="mb-3 flex w-full items-center gap-3 rounded-2xl border border-line bg-white px-[18px] py-3.5 text-[14.5px] disabled:opacity-60"
       >
-        <span className="flex h-6.5 w-6.5 items-center justify-center rounded-lg bg-[#FEE500] text-sm">💬</span>
+        <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#FEE500] text-sm">💬</span>
         {loading === "kakao" ? "이동 중..." : "카카오로 계속하기"}
       </button>
 
@@ -69,7 +69,7 @@ function LoginForm() {
         disabled={loading !== null}
         className="mb-3 flex w-full items-center gap-3 rounded-2xl border border-line bg-white px-[18px] py-3.5 text-[14.5px] disabled:opacity-60"
       >
-        <span className="flex h-6.5 w-6.5 items-center justify-center rounded-lg bg-[#EAF1FD] text-sm font-bold">G</span>
+        <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#EAF1FD] text-sm font-bold">G</span>
         {loading === "google" ? "이동 중..." : "Google로 계속하기"}
       </button>
 
@@ -77,7 +77,7 @@ function LoginForm() {
         href={nextParam ? `/api/auth/naver/login?next=${encodeURIComponent(nextParam)}` : "/api/auth/naver/login"}
         className="flex w-full items-center gap-3 rounded-2xl border border-line bg-white px-[18px] py-3.5 text-[14.5px]"
       >
-        <span className="flex h-6.5 w-6.5 items-center justify-center rounded-lg bg-[#03C75A] text-sm font-bold text-white">
+        <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#03C75A] text-sm font-bold text-white">
           N
         </span>
         네이버로 계속하기

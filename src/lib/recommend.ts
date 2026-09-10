@@ -11,6 +11,7 @@ export type Recipe = {
   requiredIngredients: string[]; // 재료 이름 목록
   allergens: string[]; // 이 레시피가 포함하는 알레르기 유발 식품
   isQuick: boolean; // 초간편 메뉴 여부 (스펙 9장: 메뉴 2)
+  imageUrl: string | null; // 관리자가 업로드한 실제 사진 (없으면 화면에서 일러스트로 대체)
 };
 
 export type Baby = {
@@ -37,6 +38,7 @@ export function toEngineRecipe(row: RecipeWithDetails): Recipe {
     requiredIngredients: row.ingredients.map((i) => i.ingredient?.name ?? "").filter(Boolean),
     allergens: row.allergens,
     isQuick: row.is_quick,
+    imageUrl: row.image_url,
   };
 }
 

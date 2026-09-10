@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { RecipeRow } from "@/lib/types/recipe";
 import { AgeStage } from "@/lib/babyAge";
@@ -9,6 +9,7 @@ const STAGES: AgeStage[] = ["0-5", "6-8", "9-11", "12-17", "18-23", "24+"];
 
 export function RecipeEditForm({ recipe }: { recipe: RecipeRow }) {
   const router = useRouter();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [form, setForm] = useState({
     min_age_stage: recipe.min_age_stage,
     cook_minutes: recipe.cook_minutes,
@@ -18,7 +19,9 @@ export function RecipeEditForm({ recipe }: { recipe: RecipeRow }) {
     choking_hazard_note: recipe.choking_hazard_note ?? "",
     caution_note: recipe.caution_note ?? "",
   });
+  const [imageUrl, setImageUrl] = useState(recipe.image_url);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
   async function handleSave() {
@@ -44,8 +47,63 @@ export function RecipeEditForm({ recipe }: { recipe: RecipeRow }) {
     }
   }
 
+  async function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    setMessage(null);
+    const body = new FormData();
+    body.append("file", file);
+
+    const res = await fetch(`/api/admin/recipes/${recipe.id}/image`, { method: "POST", body });
+    setUploading(false);
+
+    if (res.ok) {
+      const data = await res.json();
+      setImageUrl(data.url);
+      setMessage("사진이 업로드됐어요.");
+      router.refresh();
+    } else {
+      const data = await res.json().catch(() => ({}));
+      setMessage(data.error ?? "업로드 중 문제가 발생했어요.");
+    }
+  }
+
   return (
     <div className="flex flex-col gap-4">
+      <div>
+        <label className="mb-1 block text-xs font-bold text-ink-soft">레시피 사진</label>
+        <div className="flex items-center gap-3">
+          <div className="h-20 w-20 shrink-0 overflow-hidden rounded-xl border border-line bg-cream-deep">
+            {imageUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={imageUrl} alt={recipe.name} className="h-full w-full object-cover" />
+            ) : (
+              <div className="flex h-full w-full items-center justify-center text-xs text-ink-soft">없음</div>
+            )}
+          </div>
+          <div>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              onChange={handleImageChange}
+              className="hidden"
+            />
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploading}
+              className="rounded-pill border border-line bg-white px-3.5 py-2 text-xs font-bold text-ink-soft disabled:opacity-60"
+            >
+              {uploading ? "업로드 중..." : "사진 선택"}
+            </button>
+            <div className="mt-1 text-[10.5px] text-ink-soft">jpg/png/webp, 5MB 이하</div>
+          </div>
+        </div>
+      </div>
+
       <div>
         <label className="mb-1 block text-xs font-bold text-ink-soft">최소 추천 월령</label>
         <select

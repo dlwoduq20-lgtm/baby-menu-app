@@ -58,7 +58,12 @@ export function RecommendCard({
             quick ? "bg-mint-pale" : "bg-cream-deep"
           }`}
         >
-          <BowlIllustration quick={quick} />
+          {recipe.imageUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={recipe.imageUrl} alt={recipe.name} className="h-full w-full object-cover" />
+          ) : (
+            <BowlIllustration quick={quick} />
+          )}
         </div>
         <div className="min-w-0 flex-1">
           <span
