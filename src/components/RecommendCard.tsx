@@ -81,13 +81,13 @@ export function RecommendCard({
               ? `집에 있는 재료 ${recipe.ownedCount}개로 바로 만들 수 있어요.`
               : `${recipe.missingIngredients.join(", ")}만 있으면 완성돼요.`}
           </div>
-          <div className="mt-3 flex items-center gap-3 text-[12.5px] text-ink-soft">
-            <span>⏱ {recipe.cookMinutes}분</span>
-            <span>
+          <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12.5px] text-ink-soft">
+            <span className="whitespace-nowrap">⏱ {recipe.cookMinutes}분</span>
+            <span className="whitespace-nowrap">
               {"●".repeat(recipe.difficulty)}
               <span className="text-line">{"○".repeat(3 - recipe.difficulty)}</span>
             </span>
-            {recipe.missingIngredients.length === 0 && <span>추가 구매 없음</span>}
+            {recipe.missingIngredients.length === 0 && <span className="whitespace-nowrap">추가 구매 없음</span>}
           </div>
         </div>
         {quick && <MatchRing ratio={ratio} />}
