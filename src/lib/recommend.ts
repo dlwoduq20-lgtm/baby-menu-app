@@ -75,13 +75,16 @@ export function scoreRecipes(
       const ownedCount = r.requiredIngredients.length - missing.length;
       const matchRatio = ownedCount / r.requiredIngredients.length;
 
+      const stageDistance = babyStageIdx - AGE_ORDER.indexOf(r.minAgeStage); // 0 이상 (필터를 이미 통과했으므로)
+
       const score =
         matchRatio * 100 -
         missing.length * 15 -
         r.cookMinutes * 0.3 -
         r.difficulty * 3 +
         (weights[r.id] ?? 0) * 5 - // 6. 부모가 과거 좋아했던 메뉴 (스펙 8장)
-        (recentSet.has(r.id) ? 25 : 0); // 5. 최근 추천되지 않은 메뉴 우선 (스펙 8장)
+        (recentSet.has(r.id) ? 25 : 0) - // 5. 최근 추천되지 않은 메뉴 우선 (스펙 8장)
+        stageDistance * 6; // 월령이 멀수록 감점 (사용자 피드백 반영: 큰 아기에게 너무 어린 월령 메뉴 추천 방지)
 
       return {
         ...r,

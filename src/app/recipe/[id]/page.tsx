@@ -47,23 +47,28 @@ export default async function RecipeDetailPage({ params }: { params: { id: strin
 
   return (
     <div className="mx-auto min-h-screen max-w-[430px] bg-cream pb-10">
-      <div className="flex items-center gap-3.5 bg-cream-deep px-5 pb-4.5 pt-11">
+      <div className="flex items-center gap-3.5 bg-cream-deep px-5 pb-5 pt-11">
         <Link href="/home" className="flex h-[34px] w-[34px] items-center justify-center rounded-full bg-white text-sm shadow-sm">
           ←
         </Link>
         <h2 className="font-display text-lg">레시피 상세</h2>
       </div>
 
-      <div className="mx-5 mt-4.5 flex h-[150px] items-center justify-center overflow-hidden rounded-[22px] bg-cream-deep">
-        <svg width="100%" height="100%" viewBox="0 0 350 150" preserveAspectRatio="xMidYMid meet">
-          <ellipse cx="175" cy="112" rx="120" ry="28" fill="#EADFC9" />
-          <ellipse cx="175" cy="98" rx="105" ry="22" fill="#FBEFD8" />
-          <circle cx="140" cy="88" r="10" fill="#D98A5F" />
-          <circle cx="175" cy="80" r="11" fill="#D98A5F" />
-          <circle cx="210" cy="92" r="9" fill="#8FBF6B" />
-          <circle cx="155" cy="102" r="8" fill="#8FBF6B" />
-          <circle cx="195" cy="106" r="8" fill="#E8A33A" />
-        </svg>
+      <div className="mx-5 mt-5 flex h-[150px] items-center justify-center overflow-hidden rounded-[22px] bg-cream-deep">
+        {recipe.image_url ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={recipe.image_url} alt={recipe.name} className="h-full w-full object-cover" />
+        ) : (
+          <svg width="100%" height="100%" viewBox="0 0 350 150" preserveAspectRatio="xMidYMid meet">
+            <ellipse cx="175" cy="112" rx="120" ry="28" fill="#EADFC9" />
+            <ellipse cx="175" cy="98" rx="105" ry="22" fill="#FBEFD8" />
+            <circle cx="140" cy="88" r="10" fill="#D98A5F" />
+            <circle cx="175" cy="80" r="11" fill="#D98A5F" />
+            <circle cx="210" cy="92" r="9" fill="#8FBF6B" />
+            <circle cx="155" cy="102" r="8" fill="#8FBF6B" />
+            <circle cx="195" cy="106" r="8" fill="#E8A33A" />
+          </svg>
+        )}
       </div>
 
       <div className="flex flex-wrap gap-2 px-5 pb-1 pt-4">
@@ -194,7 +199,7 @@ export default async function RecipeDetailPage({ params }: { params: { id: strin
       )}
 
       {(recipe.choking_hazard_note || recipe.caution_note) && (
-        <div className="mx-5 mt-4.5 rounded-2xl border border-[#F4DFAE] bg-yellow-pale p-3.5 text-[12.5px] leading-relaxed text-[#7A5A16]">
+        <div className="mx-5 mt-5 rounded-2xl border border-[#F4DFAE] bg-yellow-pale p-3.5 text-[12.5px] leading-relaxed text-[#7A5A16]">
           <b className="mb-1 block font-display text-[13.5px] text-[#8A5E12]">월령별 안전 확인</b>
           {recipe.choking_hazard_note && <p>{recipe.choking_hazard_note}</p>}
           {recipe.caution_note && <p>{recipe.caution_note}</p>}
