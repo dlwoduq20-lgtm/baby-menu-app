@@ -101,6 +101,25 @@ export default function NotificationSettingsPage() {
     });
   }
 
+  async function handleTestPush() {
+    setStatus("loading");
+    setMessage(null);
+    try {
+      const res = await fetch("/api/push/test", { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) {
+        setStatus("error");
+        setMessage(data.error || "테스트 알림 발송 중 문제가 발생했어요.");
+      } else {
+        setStatus("saved");
+        setMessage("🎉 테스트 알림을 보냈어요! 스마트폰 상단 알림 바를 확인해 보세요.");
+      }
+    } catch {
+      setStatus("error");
+      setMessage("네트워크 오류가 발생했어요.");
+    }
+  }
+
   return (
     <div className="mx-auto min-h-screen max-w-[430px] bg-cream px-6 pb-10 pt-11">
       <div className="mb-6 flex items-center gap-3">
@@ -134,8 +153,26 @@ export default function NotificationSettingsPage() {
         className="mb-4 w-full rounded-2xl border border-line bg-white px-3.5 py-3 text-[14.5px]"
       />
 
+      <div className="mb-4 rounded-2xl border border-line bg-white p-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="font-display text-[15px]">테스트 알림 발송</div>
+            <div className="mt-0.5 text-xs text-ink-soft">스마트폰으로 알림이 오는지 즉시 테스트해요.</div>
+          </div>
+          <button
+            onClick={handleTestPush}
+            disabled={status === "loading" || !enabled}
+            className={`rounded-pill px-4 py-2 text-[13px] font-bold ${
+              enabled ? "bg-coral text-white" : "bg-line text-ink-soft cursor-not-allowed"
+            }`}
+          >
+            지금 받기
+          </button>
+        </div>
+      </div>
+
       {message && (
-        <div className={`text-[12.5px] ${status === "error" ? "text-coral-deep" : "text-mint"}`}>{message}</div>
+        <div className={`text-[12.5px] font-medium ${status === "error" ? "text-coral-deep" : "text-[#2E8F5D]"}`}>{message}</div>
       )}
     </div>
   );

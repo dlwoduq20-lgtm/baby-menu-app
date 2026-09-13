@@ -3,12 +3,30 @@ import webpush from "web-push";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { computeDailyMenu } from "@/lib/service/dailyMenu";
 
+import { createClient } from "@/lib/supabase/server";
+import { isAdminEmail } from "@/lib/admin";
+
 // Vercel Cron(또는 다른 스케줄러)이 매일 오후 4시(KST)에 이 엔드포인트를 호출한다.
 // vercel.json 예시: { "crons": [{ "path": "/api/cron/send-dinner-push", "schedule": "0 7 * * *" }] }
 // (UTC 07:00 = KST 16:00)
 export async function GET(request: Request) {
   const authHeader = request.headers.get("authorization");
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+  const isCronAuth = Boolean(process.env.CRON_SECRET && authHeader === `Bearer ${process.env.CRON_SECRET}`);
+
+  let isAdmin = false;
+  if (!isCronAuth) {
+    try {
+      const supabaseUser = createClient();
+      const {
+        data: { user },
+      } = await supabaseUser.auth.getUser();
+      isAdmin = isAdminEmail(user?.email);
+    } catch {
+      isAdmin = false;
+    }
+  }
+
+  if (!isCronAuth && !isAdmin) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
@@ -63,6 +81,9 @@ export async function GET(request: Request) {
 
   const sent = results.filter((r) => r.status === "fulfilled").length;
   const failed = results.filter((r) => r.status === "rejected").length;
+  const failures = results
+    .filter((r) => r.status === "rejected")
+    .map((r) => (r as PromiseRejectedResult).reason?.message ?? "unknown");
 
-  return NextResponse.json({ total: subscribers?.length ?? 0, sent, failed });
+  return NextResponse.json({ total: subscribers?.length ?? 0, sent, failed, failures });
 }
