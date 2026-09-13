@@ -1,6 +1,6 @@
 // STEP 10: 오후 4시 푸시 수신. STEP 12: 오프라인 캐싱 + 홈 화면 설치 지원 추가.
 
-const CACHE_NAME = "baby-menu-app-v2";
+const CACHE_NAME = "baby-menu-app-v3";
 const OFFLINE_URL = "/home";
 const PRECACHE_URLS = ["/home", "/weekly", "/manifest.json", "/icon-192.png", "/icon-512.png"];
 
@@ -62,6 +62,9 @@ self.addEventListener("push", (event) => {
       body: payload.body,
       icon: "/icon-192.png",
       badge: "/icon-192.png",
+      vibrate: [100, 50, 100],
+      tag: "dinner-push",
+      renotify: true,
       data: { url: payload.url },
     })
   );

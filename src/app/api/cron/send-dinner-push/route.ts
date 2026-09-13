@@ -72,7 +72,10 @@ export async function GET(request: Request) {
       } catch (err: any) {
         // 구독이 만료/취소된 경우(410 Gone) 더 이상 시도하지 않도록 정리
         if (err?.statusCode === 404 || err?.statusCode === 410) {
-          await supabase.from("notification_settings").update({ enabled: false }).eq("user_id", sub.user_id);
+          await supabase
+            .from("notification_settings")
+            .update({ enabled: false, push_endpoint: null, push_p256dh: null, push_auth: null })
+            .eq("user_id", sub.user_id);
         }
         throw err;
       }

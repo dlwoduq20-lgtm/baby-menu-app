@@ -54,8 +54,43 @@ export async function POST() {
     );
     return NextResponse.json({ ok: true, message: "알림 발송 성공! 스마트폰 상단 바를 확인해 보세요." });
   } catch (err: any) {
+    console.error("push test error:", err);
+    const statusCode = err?.statusCode;
+    const body = err?.body;
+
+    if (statusCode === 410 || statusCode === 404) {
+      // 기기 재설치 또는 만료로 무효화된 토큰 정리
+      await adminClient
+        .from("notification_settings")
+        .update({ push_endpoint: null, push_p256dh: null, push_auth: null })
+        .eq("user_id", user.id);
+
+      return NextResponse.json(
+        {
+          error: "기존 알림 토큰이 만료되었습니다. 알림을 다시 켜서 새 기기를 등록해 주세요.",
+          statusCode,
+          needsReenable: true,
+        },
+        { status: 410 }
+      );
+    }
+
+    if (statusCode === 401 || statusCode === 403) {
+      return NextResponse.json(
+        {
+          error: `VAPID 서버 인증 실패 (코드: ${statusCode}). 서버 키 설정을 확인해 주세요.`,
+          statusCode,
+        },
+        { status: 500 }
+      );
+    }
+
     return NextResponse.json(
-      { error: err.message || "발송 실패", statusCode: err.statusCode },
+      {
+        error: `알림 전송 실패 (${statusCode || "unknown"}: ${body || err.message})`,
+        statusCode,
+        body,
+      },
       { status: 500 }
     );
   }

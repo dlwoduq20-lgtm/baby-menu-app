@@ -37,29 +37,35 @@ export default function NotificationSettingsPage() {
     loadExisting();
   }, [supabase]);
 
-  async function handleEnable() {
-    setStatus("loading");
-    setMessage(null);
-
+  async function registerSubscription() {
     if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
-      setStatus("error");
-      setMessage("이 브라우저는 알림을 지원하지 않아요.");
-      return;
+      throw new Error("이 기기 브라우저는 푸시 알림을 지원하지 않아요.");
     }
 
     const permission = await Notification.requestPermission();
     if (permission !== "granted") {
-      setStatus("error");
-      setMessage("알림 권한이 거부됐어요. 브라우저 설정에서 다시 허용해 주세요.");
-      return;
+      throw new Error("알림 권한이 허용되지 않았어요. 브라우저/앱 설정에서 알림을 허용해 주세요.");
     }
 
-    // RootLayout에서 이미 등록해둔 서비스워커를 그대로 사용한다 (STEP 12).
     const registration = await navigator.serviceWorker.ready;
+
+    // 만료된 구 토큰이 남아있을 수 있으므로 기존 구독 해제 후 새로 발급
+    const existing = await registration.pushManager.getSubscription();
+    if (existing) {
+      try {
+        await existing.unsubscribe();
+      } catch (unsubErr) {
+        console.warn("기존 구독 해제 실패(무시가능):", unsubErr);
+      }
+    }
+
+    const vapidKey =
+      process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ||
+      "BLehk59Ldm5rR6UTzNDFOwgG842VuMWtvrjVKzLYFZinlrV0xQ4uK3MS6nBLJyJ-5LdzG9I1ah0ho1buPmBLGME";
 
     const subscription = await registration.pushManager.subscribe({
       userVisibleOnly: true,
-      applicationServerKey: urlBase64ToUint8Array(process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!),
+      applicationServerKey: urlBase64ToUint8Array(vapidKey),
     });
 
     const res = await fetch("/api/push/subscribe", {
@@ -69,23 +75,49 @@ export default function NotificationSettingsPage() {
     });
 
     if (!res.ok) {
-      setStatus("error");
-      setMessage("저장 중 문제가 발생했어요.");
-      return;
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.error || "알림 정보 저장 중 문제가 발생했어요.");
     }
 
     setEnabled(true);
-    setStatus("saved");
-    setMessage("오후 4시 알림이 켜졌어요.");
+    return subscription;
+  }
+
+  async function handleEnable() {
+    setStatus("loading");
+    setMessage("기기 알림 등록 중...");
+    try {
+      await registerSubscription();
+      setStatus("saved");
+      setMessage("오후 4시 알림이 켜졌어요! 아래 '지금 받기'를 눌러 테스트해 보세요.");
+    } catch (err: any) {
+      setStatus("error");
+      setMessage(err.message || "알림 등록에 실패했어요.");
+    }
   }
 
   async function handleDisable() {
     setStatus("loading");
+    setMessage(null);
+
+    try {
+      if ("serviceWorker" in navigator) {
+        const registration = await navigator.serviceWorker.ready;
+        const existing = await registration.pushManager.getSubscription();
+        if (existing) {
+          await existing.unsubscribe();
+        }
+      }
+    } catch (e) {
+      console.warn("Unsubscribe failed:", e);
+    }
+
     const res = await fetch("/api/push/subscribe", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ enabled: false, notifyTime }),
     });
+
     setStatus(res.ok ? "saved" : "error");
     setEnabled(false);
     setMessage(res.ok ? "알림을 껐어요." : "저장 중 문제가 발생했어요.");
@@ -103,10 +135,25 @@ export default function NotificationSettingsPage() {
 
   async function handleTestPush() {
     setStatus("loading");
-    setMessage(null);
+    setMessage("테스트 알림 발송 중...");
     try {
-      const res = await fetch("/api/push/test", { method: "POST" });
-      const data = await res.json();
+      let res = await fetch("/api/push/test", { method: "POST" });
+      let data = await res.json();
+
+      // 기존 토큰 만료 또는 기기 정보 미등록 시 자동 갱신 및 1회 재시도
+      if (!res.ok && (data.needsReenable || res.status === 410 || res.status === 400)) {
+        setMessage("기기 알림 토큰 갱신 중... 잠시만 기다려주세요.");
+        try {
+          await registerSubscription();
+          res = await fetch("/api/push/test", { method: "POST" });
+          data = await res.json();
+        } catch (regErr: any) {
+          setStatus("error");
+          setMessage(`알림 토큰 갱신 실패: ${regErr.message}`);
+          return;
+        }
+      }
+
       if (!res.ok) {
         setStatus("error");
         setMessage(data.error || "테스트 알림 발송 중 문제가 발생했어요.");
@@ -114,9 +161,9 @@ export default function NotificationSettingsPage() {
         setStatus("saved");
         setMessage("🎉 테스트 알림을 보냈어요! 스마트폰 상단 알림 바를 확인해 보세요.");
       }
-    } catch {
+    } catch (err: any) {
       setStatus("error");
-      setMessage("네트워크 오류가 발생했어요.");
+      setMessage("네트워크 오류가 발생했어요: " + (err.message || ""));
     }
   }
 
