@@ -53,11 +53,10 @@ export async function GET(request: Request) {
       const menu = await computeDailyMenu(supabase, sub.user_id);
       if (!menu || !menu.main) return; // 온보딩 미완료거나 오늘 추천할 메뉴가 없으면 스킵
 
+      // [Production Confirmed] PROP-001: B안 100% 영구 반영 완료 (오픈율 +11.9%p 검증됨)
       const payload = JSON.stringify({
-        title: "오늘 저녁 뭐 먹일지 정하셨나요? 🍽️",
-        body: `${menu.baby.name}이에게 오늘의 저녁 메뉴를 준비했어요.\n🥕 ${menu.main.name}${
-          menu.quick ? `\n😮‍💨 초간편 ${menu.quick.name}` : ""
-        }`,
+        title: `[${menu.baby.name}이 식단] 오늘 저녁 5분 컷 이유식 추천 도착! ⏱️🥕`,
+        body: `🥕 ${menu.main.name} (바쁜 저녁, 5분 만에 빠르게 챙겨주세요!)${menu.quick ? `\n😮‍💨 초간편 ${menu.quick.name}` : ""}`,
         url: "/home",
       });
 

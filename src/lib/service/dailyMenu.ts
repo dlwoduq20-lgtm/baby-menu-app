@@ -13,6 +13,8 @@ export type DailyMenuResult = {
   quick: ScoredRecipe | undefined;
   mainReason: string | null;
   quickReason: string | null;
+  readyToCookRecipes: ScoredRecipe[];
+  almostReadyRecipes: ScoredRecipe[];
 };
 
 function todayISO() {
@@ -102,6 +104,10 @@ export async function computeDailyMenu(supabase: SupabaseClient, userId: string)
     await supabase.from("recommendations").upsert(rowsToLog, { onConflict: "baby_id,recommendation_type,recommended_date" });
   }
 
+  // [CEO 스프린트 안건 반영] 보유 식재료로 100% 즉시 완성 가능한 메뉴 추출
+  const readyToCookRecipes = safeScored.filter((r) => r.missingIngredients.length === 0);
+  const almostReadyRecipes = safeScored.filter((r) => r.missingIngredients.length === 1);
+
   return {
     baby: { id: baby.id, name: baby.name },
     ageMonths,
@@ -110,5 +116,7 @@ export async function computeDailyMenu(supabase: SupabaseClient, userId: string)
     quick,
     mainReason: aiMain ? aiPick?.mainReason ?? null : null,
     quickReason: aiQuick ? aiPick?.quickReason ?? null : null,
+    readyToCookRecipes,
+    almostReadyRecipes,
   };
 }

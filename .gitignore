@@ -1,4 +1,4 @@
-﻿# dependencies
+# dependencies
 /node_modules
 /.pnp
 .pnp.js
@@ -34,3 +34,8 @@ yarn-error.log*
 next-env.d.ts
 .vercel
 .env*
+
+# backups & IDE
+*.bak
+.idea/
+*.local

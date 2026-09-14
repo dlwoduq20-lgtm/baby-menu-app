@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { AGE_STAGE_LABEL } from "@/lib/babyAge";
 import { computeDailyMenu } from "@/lib/service/dailyMenu";
 import { RecommendCard } from "@/components/RecommendCard";
+import { PantryReadySection } from "@/components/PantryReadySection";
 
 export default async function HomePage() {
   const supabase = createClient();
@@ -16,7 +17,17 @@ export default async function HomePage() {
   const result = await computeDailyMenu(supabase, user.id);
   if (!result) redirect("/onboarding/baby");
 
-  const { baby, ageMonths, ageStage, main, quick, mainReason, quickReason } = result;
+  const {
+    baby,
+    ageMonths,
+    ageStage,
+    main,
+    quick,
+    mainReason,
+    quickReason,
+    readyToCookRecipes,
+    almostReadyRecipes,
+  } = result;
 
   const { data: ownedRows } = await supabase
     .from("user_ingredients")
@@ -101,6 +112,14 @@ export default async function HomePage() {
                 지금 조건에 맞는 초간편 메뉴가 없어요.
               </div>
             )}
+
+            {/* [CEO 안건 정식 채택 100% 반영] 현재 내가 가진 재료로 100% 만들 수 있는 메뉴 섹션 */}
+            <PantryReadySection
+              readyRecipes={readyToCookRecipes}
+              recommendedIds={[main?.id, quick?.id].filter(Boolean) as string[]}
+              almostReadyRecipes={almostReadyRecipes}
+              ownedCount={ownedCount}
+            />
           </>
         )}
 
