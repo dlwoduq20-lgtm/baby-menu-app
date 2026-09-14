@@ -69,6 +69,10 @@ export async function GET(request: Request) {
         message: err.message,
         body: err.body,
         endpoint: sub.push_endpoint.slice(0, 45) + "...",
+        vapidPublicKey: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
+        vapidSubject: process.env.VAPID_SUBJECT,
+        hasPrivateKey: Boolean(process.env.VAPID_PRIVATE_KEY),
+        privateKeyLength: process.env.VAPID_PRIVATE_KEY?.length,
       },
       { status: 500 }
     );
