@@ -62,7 +62,7 @@ export default async function HomePage() {
       <div className="px-[22px]">
         <Link
           href="/weekly"
-          className="mb-5 mt-5 flex items-center justify-between rounded-2xl border border-coral-pale bg-coral-pale/40 p-4"
+          className="mb-3 mt-5 flex items-center justify-between rounded-2xl border border-coral-pale bg-coral-pale/40 p-4"
         >
           <div>
             <div className="font-display text-[14.5px] text-coral-deep">🗓️ 이번 주 식단 & 장보기 리스트</div>
@@ -72,6 +72,32 @@ export default async function HomePage() {
           </div>
           <span className="text-coral-deep">→</span>
         </Link>
+
+        {/* [대표님 안건 100% 반영] 상단 퀵 바로가기 배너 */}
+        <a
+          href="#pantry-section"
+          className="mb-5 flex items-center justify-between rounded-2xl border border-[#C8EAD6] bg-[#F0F9F4] p-4 transition-all hover:bg-[#E3F4EA] shadow-sm"
+        >
+          <div className="flex items-center gap-3">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-white text-lg shadow-xs">
+              🍳
+            </span>
+            <div>
+              <div className="flex items-center gap-1.5">
+                <span className="font-display text-[14px] text-[#1E7246]">
+                  보유 재료 100% 완성 메뉴
+                </span>
+                <span className="rounded-pill bg-[#5FB98C] px-2 py-0.5 text-[10px] font-bold text-white">
+                  {readyToCookRecipes.length}개 조리 가능
+                </span>
+              </div>
+              <div className="mt-0.5 text-[11px] text-ink-soft">
+                추가 장보기 0원! 우리 집 냉장고 재료로 즉시 요리하기
+              </div>
+            </div>
+          </div>
+          <span className="text-[#1E7246] font-bold">↓</span>
+        </a>
 
         {ageStage === "0-5" ? (
           <div className="mt-6 rounded-2xl border border-line bg-white p-5 text-[13.5px] text-ink-soft">

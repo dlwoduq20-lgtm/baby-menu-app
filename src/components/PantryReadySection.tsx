@@ -35,11 +35,21 @@ export function PantryReadySection({
   almostReadyRecipes = [],
   ownedCount,
 }: PantryReadySectionProps) {
-  const [filterMode, setFilterMode] = useState<"others" | "all" | "almost">("others");
-  const [isExpanded, setIsExpanded] = useState(false);
-
   // 추천된 메뉴(오늘의 추천, 초간편)를 제외한 100% 매칭 메뉴
   const otherReadyRecipes = readyRecipes.filter((r) => !recommendedIds.includes(r.id));
+
+  // 추천 외 다른 메뉴가 있으면 others를 기본으로, 없으면 all(전체), 그것도 없으면 almost를 기본 선택
+  const initialMode: "others" | "all" | "almost" =
+    otherReadyRecipes.length > 0
+      ? "others"
+      : readyRecipes.length > 0
+      ? "all"
+      : almostReadyRecipes.length > 0
+      ? "almost"
+      : "all";
+
+  const [filterMode, setFilterMode] = useState<"others" | "all" | "almost">(initialMode);
+  const [isExpanded, setIsExpanded] = useState(false);
 
   // 현재 탭에 따라 보여줄 목록 결정
   const displayList =
@@ -53,7 +63,7 @@ export function PantryReadySection({
   const hasMore = displayList.length > 3;
 
   return (
-    <section className="mb-6 mt-6">
+    <section className="mb-6 mt-6 scroll-mt-6" id="pantry-section">
       {/* 헤더 타이틀 */}
       <div className="mb-3 flex items-center justify-between">
         <div className="flex items-center gap-2">
