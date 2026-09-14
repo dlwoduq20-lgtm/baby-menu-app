@@ -1,6 +1,6 @@
 // STEP 10: 오후 4시 푸시 수신. STEP 12: 오프라인 캐싱 + 홈 화면 설치 지원 추가.
 
-const CACHE_NAME = "baby-menu-app-v4";
+const CACHE_NAME = "baby-menu-app-v5";
 const OFFLINE_URL = "/home";
 const PRECACHE_URLS = ["/home", "/weekly", "/manifest.json", "/icon-192.png", "/icon-512.png"];
 
@@ -76,13 +76,31 @@ self.addEventListener("push", (event) => {
 
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
-  const url = event.notification.data?.url || "/home";
+
+  const rawUrl = event.notification.data?.url || "/home";
+  const targetUrl = new URL(rawUrl, self.location.origin).href;
+
   event.waitUntil(
-    self.clients.matchAll({ type: "window" }).then((clientList) => {
-      for (const client of clientList) {
-        if (client.url.includes(url) && "focus" in client) return client.focus();
-      }
-      if (self.clients.openWindow) return self.clients.openWindow(url);
-    })
+    self.clients
+      .matchAll({ type: "window", includeUncontrolled: true })
+      .then(async (clientList) => {
+        // 1. 이미 열려 있는 창(TWA 앱 창 등)이 있는 경우: 해당 창으로 포커스하고 대상 URL로 이동
+        for (const client of clientList) {
+          if (client.url && client.url.startsWith(self.location.origin)) {
+            if ("focus" in client) {
+              await client.focus();
+            }
+            if ("navigate" in client) {
+              return client.navigate(targetUrl);
+            }
+            return;
+          }
+        }
+
+        // 2. 열려 있는 창이 없는 경우: 절대 URL로 새 창 열기
+        if (self.clients.openWindow) {
+          return self.clients.openWindow(targetUrl);
+        }
+      })
   );
 });
