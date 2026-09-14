@@ -1,12 +1,24 @@
 // STEP 10: 오후 4시 푸시 수신. STEP 12: 오프라인 캐싱 + 홈 화면 설치 지원 추가.
 
-const CACHE_NAME = "baby-menu-app-v6";
-const OFFLINE_URL = "/home";
-const PRECACHE_URLS = ["/home", "/weekly", "/manifest.json", "/icon-192.png", "/icon-512.png"];
+const CACHE_NAME = "baby-menu-app-v7";
+const PRECACHE_URLS = [
+  "/manifest.json",
+  "/icon-192.png",
+  "/icon-512.png",
+  "/icon-maskable-512.png",
+  "/favicon.png",
+];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(PRECACHE_URLS)).then(() => self.skipWaiting())
+    caches
+      .open(CACHE_NAME)
+      .then((cache) =>
+        cache.addAll(PRECACHE_URLS).catch((err) => {
+          console.warn("[SW] Precache non-fatal warning:", err);
+        })
+      )
+      .then(() => self.skipWaiting())
   );
 });
 
@@ -14,12 +26,14 @@ self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches
       .keys()
-      .then((keys) => Promise.all(keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k))))
+      .then((keys) =>
+        Promise.all(keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k)))
+      )
       .then(() => self.clients.claim())
   );
 });
 
-// 페이지 이동: 네트워크 우선, 오프라인이면 해당 페이지 캐시 -> 없으면 홈 화면으로 대체
+// 페이지 이동: 네트워크 우선, 오프라인이면 해당 페이지 캐시 -> 없으면 통과
 // 정적 자산(js/css/이미지): 캐시 우선, 없으면 네트워크 요청 후 캐시에 저장
 self.addEventListener("fetch", (event) => {
   const { request } = event;
@@ -29,7 +43,7 @@ self.addEventListener("fetch", (event) => {
 
   if (isNavigation) {
     event.respondWith(
-      fetch(request).catch(() => caches.match(request).then((res) => res || caches.match(OFFLINE_URL)))
+      fetch(request).catch(() => caches.match(request))
     );
     return;
   }
@@ -81,26 +95,30 @@ self.addEventListener("notificationclick", (event) => {
   const targetUrl = new URL(rawUrl, self.location.origin).href;
 
   event.waitUntil(
-    self.clients
-      .matchAll({ type: "window", includeUncontrolled: true })
-      .then(async (clientList) => {
-        // 1. 이미 열려 있는 창(TWA 앱 창 등)이 있는 경우: 해당 창으로 포커스하고 대상 URL로 이동
-        for (const client of clientList) {
-          if (client.url && client.url.startsWith(self.location.origin)) {
-            if ("focus" in client) {
-              await client.focus();
-            }
-            if ("navigate" in client) {
-              return client.navigate(targetUrl);
-            }
-            return;
-          }
-        }
+    (async () => {
+      // 1. 열려 있는 모든 창 검색 (포커스 가능한 TWA 창 포함)
+      const clientList = await self.clients.matchAll({
+        type: "window",
+        includeUncontrolled: true,
+      });
 
-        // 2. 열려 있는 창이 없는 경우: 절대 URL로 새 창 열기
-        if (self.clients.openWindow) {
-          return self.clients.openWindow(targetUrl);
+      // 2. 이미 열려 있는 창이 있는 경우: 해당 창 포커스 후 대상 URL로 이동
+      for (const client of clientList) {
+        if (client.url && client.url.startsWith(self.location.origin)) {
+          if ("focus" in client) {
+            await client.focus();
+          }
+          if ("navigate" in client) {
+            return await client.navigate(targetUrl);
+          }
+          return;
         }
-      })
+      }
+
+      // 3. 열려 있는 창이 없는 경우: URL로 새 창 열기 (Android App Links를 통해 TWA로 열림)
+      if (self.clients.openWindow) {
+        return await self.clients.openWindow(targetUrl);
+      }
+    })()
   );
 });

@@ -261,6 +261,7 @@ export default function NotificationSettingsPage() {
         <div>• <strong>매일 오후 4:00 (16:00)</strong>에 오늘의 이유식 저녁 메뉴가 스마트폰으로 도착합니다.</div>
         <div>• <strong>[지금 받기]</strong>를 누르면 1~2초 내에 즉시 테스트 알림이 상단 바에 도착합니다.</div>
         <div>• 스마트폰의 <strong>방해금지 모드</strong>나 <strong>절전 모드</strong>가 켜져 있으면 화면이 꺼진 동안 알림이 지연될 수 있습니다.</div>
+        <div>• 알림 클릭 시 앱 대신 웹브라우저가 열리는 경우: 스마트폰 <strong>[설정] &gt; [애플리케이션] &gt; [오늘 뭐 먹이지] &gt; [기본으로 설정(또는 지원되는 링크 열기)]</strong>에서 <strong>'지원되는 링크 열기'</strong>를 허용해 주세요.</div>
       </div>
     </div>
   );
