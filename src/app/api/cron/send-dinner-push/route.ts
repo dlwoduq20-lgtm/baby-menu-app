@@ -67,7 +67,11 @@ export async function GET(request: Request) {
             endpoint: sub.push_endpoint,
             keys: { p256dh: sub.push_p256dh, auth: sub.push_auth },
           },
-          payload
+          payload,
+          {
+            TTL: 86400,
+            urgency: "high",
+          }
         );
       } catch (err: any) {
         // 구독이 만료/취소된 경우(410 Gone) 더 이상 시도하지 않도록 정리

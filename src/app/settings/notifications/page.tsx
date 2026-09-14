@@ -17,6 +17,13 @@ export default function NotificationSettingsPage() {
   const [notifyTime, setNotifyTime] = useState("16:00");
   const [status, setStatus] = useState<"idle" | "loading" | "saved" | "error">("idle");
   const [message, setMessage] = useState<string | null>(null);
+  const [permState, setPermState] = useState<string>("checking");
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && "Notification" in window) {
+      setPermState(Notification.permission);
+    }
+  }, []);
 
   useEffect(() => {
     async function loadExisting() {
@@ -43,8 +50,9 @@ export default function NotificationSettingsPage() {
     }
 
     const permission = await Notification.requestPermission();
+    setPermState(permission);
     if (permission !== "granted") {
-      throw new Error("알림 권한이 허용되지 않았어요. 브라우저/앱 설정에서 알림을 허용해 주세요.");
+      throw new Error("스마트폰 알림 권한이 허용되지 않았어요. 기기 설정에서 알림을 허용해 주세요.");
     }
 
     const registration = await navigator.serviceWorker.ready;
@@ -136,6 +144,16 @@ export default function NotificationSettingsPage() {
   async function handleTestPush() {
     setStatus("loading");
     setMessage("테스트 알림 발송 중...");
+
+    if (typeof window !== "undefined" && "Notification" in window) {
+      if (Notification.permission === "denied") {
+        setStatus("error");
+        setPermState("denied");
+        setMessage("스마트폰 설정에서 알림 권한이 차단되어 있어 알림창에 뜨지 않아요. 휴대폰 설정 > 애플리케이션 > '오늘 뭐 먹이지' > 알림 허용을 켜주세요.");
+        return;
+      }
+    }
+
     try {
       let res = await fetch("/api/push/test", { method: "POST" });
       let data = await res.json();
@@ -159,7 +177,7 @@ export default function NotificationSettingsPage() {
         setMessage(data.error || "테스트 알림 발송 중 문제가 발생했어요.");
       } else {
         setStatus("saved");
-        setMessage("🎉 테스트 알림을 보냈어요! 스마트폰 상단 알림 바를 확인해 보세요.");
+        setMessage("🎉 테스트 알림을 발송했어요! 스마트폰 상단 바를 내려 확인해 보세요.");
       }
     } catch (err: any) {
       setStatus("error");
@@ -175,6 +193,20 @@ export default function NotificationSettingsPage() {
         </Link>
         <h1 className="font-display text-lg">알림 설정</h1>
       </div>
+
+      {permState === "denied" && (
+        <div className="mb-4 rounded-2xl border border-coral/30 bg-coral/10 p-3.5 text-xs text-coral-deep leading-relaxed">
+          <div className="font-bold text-[13px] mb-1">⚠️ 기기 알림이 차단되어 있습니다</div>
+          스마트폰 <strong>[설정] &gt; [애플리케이션] &gt; [오늘 뭐 먹이지] &gt; [알림]</strong>에서 알림 허용을 켜주셔야 상단 바에 알림이 표시됩니다.
+        </div>
+      )}
+
+      {permState === "granted" && (
+        <div className="mb-4 rounded-2xl border border-[#2E8F5D]/20 bg-[#2E8F5D]/5 px-4 py-2.5 text-xs text-[#2E8F5D] flex items-center justify-between">
+          <span>스마트폰 알림 권한</span>
+          <span className="font-bold">허용됨 ✅</span>
+        </div>
+      )}
 
       <div className="mb-4 flex items-center justify-between rounded-2xl border border-line bg-white p-4">
         <div>
@@ -203,8 +235,8 @@ export default function NotificationSettingsPage() {
       <div className="mb-4 rounded-2xl border border-line bg-white p-4">
         <div className="flex items-center justify-between">
           <div>
-            <div className="font-display text-[15px]">테스트 알림 발송</div>
-            <div className="mt-0.5 text-xs text-ink-soft">스마트폰으로 알림이 오는지 즉시 테스트해요.</div>
+            <div className="font-display text-[15px]">테스트 알림 즉시 발송</div>
+            <div className="mt-0.5 text-xs text-ink-soft">스마트폰으로 알림이 오는지 지금 테스트해요.</div>
           </div>
           <button
             onClick={handleTestPush}
@@ -219,8 +251,17 @@ export default function NotificationSettingsPage() {
       </div>
 
       {message && (
-        <div className={`text-[12.5px] font-medium ${status === "error" ? "text-coral-deep" : "text-[#2E8F5D]"}`}>{message}</div>
+        <div className={`rounded-xl p-3 text-[12.5px] font-medium leading-relaxed ${status === "error" ? "bg-coral/10 text-coral-deep" : "bg-mint/10 text-[#2E8F5D]"}`}>
+          {message}
+        </div>
       )}
+
+      <div className="mt-6 rounded-2xl border border-line bg-white/70 p-4 text-xs text-ink-soft space-y-1.5 leading-relaxed">
+        <div className="font-bold text-ink">💡 알림 수신 안내</div>
+        <div>• <strong>매일 오후 4:00 (16:00)</strong>에 오늘의 이유식 저녁 메뉴가 스마트폰으로 도착합니다.</div>
+        <div>• <strong>[지금 받기]</strong>를 누르면 1~2초 내에 즉시 테스트 알림이 상단 바에 도착합니다.</div>
+        <div>• 스마트폰의 <strong>방해금지 모드</strong>나 <strong>절전 모드</strong>가 켜져 있으면 화면이 꺼진 동안 알림이 지연될 수 있습니다.</div>
+      </div>
     </div>
   );
 }

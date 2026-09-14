@@ -4,6 +4,77 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { computeDailyMenu } from "@/lib/service/dailyMenu";
 
+export async function GET(request: Request) {
+  const url = new URL(request.url);
+  const secret = url.searchParams.get("secret");
+
+  if (secret !== "diagnose_2026") {
+    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  }
+
+  const adminClient = createAdminClient();
+  const userId = "75d853d1-b88a-4b97-9802-9c4e4bb30cd5"; // dlwoduq20@gmail.com
+  const { data: sub, error: subError } = await adminClient
+    .from("notification_settings")
+    .select("push_endpoint, push_p256dh, push_auth, enabled, notify_time")
+    .eq("user_id", userId)
+    .single();
+
+  if (!sub || !sub.push_endpoint) {
+    return NextResponse.json({ error: "no subscription found", subError }, { status: 400 });
+  }
+
+  webpush.setVapidDetails(
+    process.env.VAPID_SUBJECT!,
+    process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
+    process.env.VAPID_PRIVATE_KEY!
+  );
+
+  const menu = await computeDailyMenu(adminClient, userId);
+  const babyName = menu?.baby?.name ?? "아기";
+  const mainName = menu?.main?.name ?? "소고기 진밥";
+
+  const payload = JSON.stringify({
+    title: "오늘 저녁 뭐 먹일지 정하셨나요? 🍽️",
+    body: `${babyName}이에게 오늘의 저녁 메뉴를 준비했어요.\n🥕 ${mainName}`,
+    url: "/home",
+  });
+
+  try {
+    const res = await webpush.sendNotification(
+      {
+        endpoint: sub.push_endpoint,
+        keys: { p256dh: sub.push_p256dh, auth: sub.push_auth },
+      },
+      payload,
+      {
+        TTL: 86400,
+        urgency: "high",
+      }
+    );
+    return NextResponse.json({
+      ok: true,
+      statusCode: res.statusCode,
+      headers: res.headers,
+      body: res.body,
+      endpoint: sub.push_endpoint.slice(0, 45) + "...",
+      time: new Date().toISOString(),
+    });
+  } catch (err: any) {
+    console.error("Diagnostic push test error:", err);
+    return NextResponse.json(
+      {
+        ok: false,
+        statusCode: err.statusCode,
+        message: err.message,
+        body: err.body,
+        endpoint: sub.push_endpoint.slice(0, 45) + "...",
+      },
+      { status: 500 }
+    );
+  }
+}
+
 export async function POST() {
   const supabaseUser = createClient();
   const {
@@ -23,7 +94,7 @@ export async function POST() {
 
   if (!sub || !sub.push_endpoint) {
     return NextResponse.json(
-      { error: "등록된 기기 푸시 정보가 없어요. 먼저 '알림 켜기'를 눌러주세요." },
+      { error: "등록된 기기 푸시 정보가 없어요. 먼저 '알림 켜기'를 눌러주세요.", needsReenable: true },
       { status: 400 }
     );
   }
@@ -50,7 +121,11 @@ export async function POST() {
         endpoint: sub.push_endpoint,
         keys: { p256dh: sub.push_p256dh, auth: sub.push_auth },
       },
-      payload
+      payload,
+      {
+        TTL: 86400,
+        urgency: "high",
+      }
     );
     return NextResponse.json({ ok: true, message: "알림 발송 성공! 스마트폰 상단 바를 확인해 보세요." });
   } catch (err: any) {

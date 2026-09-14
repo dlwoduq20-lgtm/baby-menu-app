@@ -1,6 +1,6 @@
 // STEP 10: 오후 4시 푸시 수신. STEP 12: 오프라인 캐싱 + 홈 화면 설치 지원 추가.
 
-const CACHE_NAME = "baby-menu-app-v3";
+const CACHE_NAME = "baby-menu-app-v4";
 const OFFLINE_URL = "/home";
 const PRECACHE_URLS = ["/home", "/weekly", "/manifest.json", "/icon-192.png", "/icon-512.png"];
 
@@ -57,16 +57,20 @@ self.addEventListener("push", (event) => {
     // JSON이 아니면 기본 payload 사용
   }
 
+  const title = payload.title || "오늘 뭐 먹이지 🍽️";
+  const options = {
+    body: payload.body || "오늘의 저녁 메뉴를 확인해 보세요!",
+    icon: "/icon-192.png",
+    badge: "/icon-192.png",
+    vibrate: [200, 100, 200],
+    tag: "dinner-push",
+    renotify: true,
+    requireInteraction: true,
+    data: { url: payload.url || "/home" },
+  };
+
   event.waitUntil(
-    self.registration.showNotification(payload.title, {
-      body: payload.body,
-      icon: "/icon-192.png",
-      badge: "/icon-192.png",
-      vibrate: [100, 50, 100],
-      tag: "dinner-push",
-      renotify: true,
-      data: { url: payload.url },
-    })
+    self.registration.showNotification(title, options)
   );
 });
 
