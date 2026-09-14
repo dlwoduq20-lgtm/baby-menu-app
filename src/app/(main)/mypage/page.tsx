@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { calcAgeInMonths, getAgeStage, AGE_STAGE_LABEL } from "@/lib/babyAge";
 import { LogoutButton } from "@/components/LogoutButton";
+import { DeleteAccountButton } from "@/components/DeleteAccountButton";
 
 export default async function MyPage() {
   const supabase = createClient();
@@ -48,6 +49,7 @@ export default async function MyPage() {
       </div>
 
       <LogoutButton />
+      <DeleteAccountButton />
 
       <p className="mt-6 text-center text-[11px] text-ink-soft">
         본 서비스는 일반적인 식단 정보를 제공하며, 의료적 조언을 대체하지 않습니다.
