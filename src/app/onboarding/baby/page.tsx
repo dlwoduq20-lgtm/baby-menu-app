@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { calcAgeInMonths } from "@/lib/babyAge";
+import { calcAgeInMonths, formatBabyAge, getDetailedStageLabel } from "@/lib/babyAge";
 
 export default function BabyProfilePage() {
   const router = useRouter();
@@ -125,7 +125,7 @@ export default function BabyProfilePage() {
 
         {agePreview !== null && (
           <div className="mb-2 rounded-xl bg-mint-pale px-3.5 py-2.5 text-xs">
-            👶 {birthDate}생 {name || "아기"}는 오늘 기준 <b>{agePreview}개월</b>이에요. (달력 기준 정확 계산)
+            👶 {birthDate}생 {name || "아이"}는 오늘 기준 <b>{formatBabyAge(agePreview)}</b> ({getDetailedStageLabel(agePreview)})이에요.
           </div>
         )}
         {error && <div className="mb-2 text-xs text-coral-deep">{error}</div>}

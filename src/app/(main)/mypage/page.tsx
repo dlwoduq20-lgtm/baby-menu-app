@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { calcAgeInMonths, getAgeStage, AGE_STAGE_LABEL } from "@/lib/babyAge";
+import { calcAgeInMonths, formatBabyAge, getDetailedStageLabel } from "@/lib/babyAge";
 import { LogoutButton } from "@/components/LogoutButton";
 import { DeleteAccountButton } from "@/components/DeleteAccountButton";
 
@@ -25,7 +25,7 @@ export default async function MyPage() {
         {baby && (
           <div className="mt-3 border-t border-line pt-3 text-[13.5px]">
             <b className="font-display">{baby.name}</b> ·{" "}
-            {AGE_STAGE_LABEL[getAgeStage(calcAgeInMonths(baby.birth_date))]}
+            {formatBabyAge(calcAgeInMonths(baby.birth_date))} ({getDetailedStageLabel(calcAgeInMonths(baby.birth_date))})
           </div>
         )}
       </div>

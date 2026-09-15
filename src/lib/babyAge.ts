@@ -47,5 +47,38 @@ export const AGE_STAGE_LABEL: Record<AgeStage, string> = {
   "9-11": "후기 이유식",
   "12-17": "유아식 초기",
   "18-23": "유아식",
-  "24+": "유아식 · 가족식 응용",
+  "24+": "유아·어린이 키즈식 (2~7세)",
 };
+
+/**
+ * [스프린트 안건 반영] 24개월~7세(84개월) 확장:
+ * 24개월 미만: "N개월"
+ * 24개월 이상 (만 2세~7세): "만 N세 (M개월)" 형식으로 부모 친화적 표기
+ */
+export function formatBabyAge(months: number): string {
+  if (months < 24) {
+    return `${months}개월`;
+  }
+  const years = Math.floor(months / 12);
+  const remMonths = months % 12;
+  if (remMonths === 0) {
+    return `만 ${years}세 (${months}개월)`;
+  }
+  return `만 ${years}세 ${remMonths}개월 (${months}개월)`;
+}
+
+/**
+ * 7세까지 세분화된 단계별 맞춤 라벨
+ */
+export function getDetailedStageLabel(months: number): string {
+  if (months <= 5) return "이유식 준비기";
+  if (months <= 8) return "초기/중기 이유식";
+  if (months <= 11) return "후기 이유식";
+  if (months <= 17) return "유아식 초기";
+  if (months <= 23) return "유아식";
+  if (months <= 35) return "완료기 유아식 (만 2세)";
+  if (months <= 59) return "키즈 유아식 (만 3~4세)";
+  if (months <= 84) return "어린이 성장식 (만 5~7세)";
+  return "어린이 가족식 (7세 이상)";
+}
+
