@@ -13,31 +13,56 @@ export function ExitConfirmGuard() {
       return;
     }
 
-    // 홈 진입 시 가드용 더미 엔트리 1개 적재
-    try {
-      window.history.pushState({ exitGuard: true }, "", window.location.href);
-    } catch (e) {}
+    console.log("[ExitConfirmGuard] mounted on pathname:", pathname);
 
-    function handlePopState() {
+    // 홈 진입 시 가드용 더미 엔트리 1개 적재
+    const pushGuard = () => {
+      try {
+        if (!window.history.state?.exitGuard) {
+          window.history.pushState({ exitGuard: true }, "", window.location.href);
+          console.log("[ExitConfirmGuard] pushed exitGuard state");
+        }
+      } catch (e) {}
+    };
+
+    pushGuard();
+
+    // 사용자의 첫 터치 인터랙션 시에도 히스토리 가드가 브라우저 제스처 정책을 통과하도록 보장
+    const onUserTouch = () => {
+      pushGuard();
+    };
+    window.addEventListener("pointerdown", onUserTouch, { passive: true });
+    window.addEventListener("touchstart", onUserTouch, { passive: true });
+
+    function handlePopState(e: PopStateEvent) {
+      console.log("[ExitConfirmGuard] popstate fired!", {
+        state: e.state,
+        historyLength: window.history.length,
+      });
+
       setShowConfirm((prev) => {
         if (prev) {
           // 이미 팝업이 떠 있는 상태에서 또 뒤로가기를 누르면 즉시 앱 종료
+          console.log("[ExitConfirmGuard] second back pressed while modal open -> exit");
           handleConfirmExit();
           return false;
         }
         // 첫 뒤로가기: 트랩 유지 후 팝업 노출
-        try {
-          window.history.pushState({ exitGuard: true }, "", window.location.href);
-        } catch (e) {}
+        pushGuard();
         return true;
       });
     }
 
     window.addEventListener("popstate", handlePopState);
-    return () => window.removeEventListener("popstate", handlePopState);
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+      window.removeEventListener("pointerdown", onUserTouch);
+      window.removeEventListener("touchstart", onUserTouch);
+    };
   }, [pathname]);
 
   function handleConfirmExit() {
+    console.log("[ExitConfirmGuard] handleConfirmExit called");
     setShowConfirm(false);
     try {
       window.close();
@@ -54,7 +79,7 @@ export function ExitConfirmGuard() {
   if (!showConfirm) return null;
 
   return (
-    <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/40 px-8 backdrop-blur-[1px]">
+    <div className="fixed inset-0 z-[10001] flex items-center justify-center bg-black/40 px-8 backdrop-blur-[1px]">
       <div className="w-full max-w-[300px] rounded-2xl bg-white p-5 text-center shadow-xl">
         <p className="mb-4 font-display text-[15.5px] text-ink">앱을 종료하시겠습니까?</p>
         <div className="flex gap-2">

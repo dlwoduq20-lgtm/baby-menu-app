@@ -6,17 +6,24 @@ let hasShownIntro = false;
 
 export function IntroSplash() {
   const [stage, setStage] = useState<"visible" | "leaving" | "hidden">(() => {
-    if (typeof window !== "undefined" && hasShownIntro) {
-      return "hidden";
+    if (typeof window !== "undefined") {
+      try {
+        if (hasShownIntro || sessionStorage.getItem("introShown")) {
+          return "hidden";
+        }
+      } catch (e) {}
     }
     return "visible";
   });
 
   useEffect(() => {
-    if (hasShownIntro) {
-      setStage("hidden");
-      return;
-    }
+    try {
+      if (hasShownIntro || sessionStorage.getItem("introShown")) {
+        setStage("hidden");
+        return;
+      }
+      sessionStorage.setItem("introShown", "true");
+    } catch (e) {}
     hasShownIntro = true;
 
     const leaveTimer = setTimeout(() => setStage("leaving"), 1200);
