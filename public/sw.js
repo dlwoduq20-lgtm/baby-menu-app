@@ -1,6 +1,6 @@
 // STEP 10: 오후 4시 푸시 수신. STEP 12: 오프라인 캐싱 + 홈 화면 설치 지원 추가.
 
-const CACHE_NAME = "baby-menu-app-v7";
+const CACHE_NAME = "baby-menu-app-v8";
 const PRECACHE_URLS = [
   "/manifest.json",
   "/icon-192.png",

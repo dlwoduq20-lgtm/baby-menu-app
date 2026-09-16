@@ -2,14 +2,23 @@
 
 import { useEffect, useState } from "react";
 
+let hasShownIntro = false;
+
 export function IntroSplash() {
-  const [stage, setStage] = useState<"hidden" | "visible" | "leaving">("hidden");
+  const [stage, setStage] = useState<"visible" | "leaving" | "hidden">(() => {
+    if (typeof window !== "undefined" && hasShownIntro) {
+      return "hidden";
+    }
+    return "visible";
+  });
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    if (sessionStorage.getItem("introShown")) return;
-    sessionStorage.setItem("introShown", "true");
-    setStage("visible");
+    if (hasShownIntro) {
+      setStage("hidden");
+      return;
+    }
+    hasShownIntro = true;
+
     const leaveTimer = setTimeout(() => setStage("leaving"), 1200);
     const hideTimer = setTimeout(() => setStage("hidden"), 1600);
     return () => {
@@ -33,3 +42,4 @@ export function IntroSplash() {
     </div>
   );
 }
+

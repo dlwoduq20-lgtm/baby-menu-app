@@ -8,13 +8,29 @@ export function ExitConfirmGuard() {
   const [showConfirm, setShowConfirm] = useState(false);
 
   useEffect(() => {
-    if (pathname !== "/home") return;
+    if (pathname !== "/home") {
+      setShowConfirm(false);
+      return;
+    }
 
-    window.history.pushState({ exitGuard: true }, "", window.location.href);
+    // 홈 진입 시 가드용 더미 엔트리 1개 적재
+    try {
+      window.history.pushState({ exitGuard: true }, "", window.location.href);
+    } catch (e) {}
 
     function handlePopState() {
-      window.history.pushState({ exitGuard: true }, "", window.location.href);
-      setShowConfirm(true);
+      setShowConfirm((prev) => {
+        if (prev) {
+          // 이미 팝업이 떠 있는 상태에서 또 뒤로가기를 누르면 즉시 앱 종료
+          handleConfirmExit();
+          return false;
+        }
+        // 첫 뒤로가기: 트랩 유지 후 팝업 노출
+        try {
+          window.history.pushState({ exitGuard: true }, "", window.location.href);
+        } catch (e) {}
+        return true;
+      });
     }
 
     window.addEventListener("popstate", handlePopState);
@@ -23,11 +39,17 @@ export function ExitConfirmGuard() {
 
   function handleConfirmExit() {
     setShowConfirm(false);
-    window.history.go(-1);
+    try {
+      window.close();
+    } catch (e) {}
+    window.history.go(-2);
     setTimeout(() => {
-      window.history.go(-1);
-    }, 50);
+      try {
+        window.history.go(-1);
+      } catch (e) {}
+    }, 100);
   }
+
 
   if (!showConfirm) return null;
 
