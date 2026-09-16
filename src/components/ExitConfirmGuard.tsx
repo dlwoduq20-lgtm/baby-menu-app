@@ -7,6 +7,7 @@ export function ExitConfirmGuard() {
   const pathname = usePathname();
   const [showConfirm, setShowConfirm] = useState(false);
   const showConfirmRef = useRef(false);
+  const isExitingRef = useRef(false);
 
   useEffect(() => {
     showConfirmRef.current = showConfirm;
@@ -20,35 +21,48 @@ export function ExitConfirmGuard() {
 
     console.log("[ExitConfirmGuard] mounted on pathname:", pathname);
 
-    let hasActivatedWithGesture = false;
-
-    // 1. Next.js 내부 상태(__NA, __PRIVATE_NEXTJS_INTERNALS_TREE 등)를 반드시 보존하며 push
-    const pushGuard = () => {
+    // 1. Next.js 내부 상태(__NA 등)를 보존하며 Base -> Guard 1개만 정확히 적재
+    const armGuard = () => {
+      if (isExitingRef.current) return;
       try {
         const curState = window.history.state || {};
-        window.history.pushState(
-          { ...curState, exitGuard: true, t: Date.now() },
-          "",
-          window.location.href
-        );
-        console.log("[ExitConfirmGuard] pushed exitGuard state (Next.js state preserved)");
+        if (!curState.exitGuard) {
+          window.history.replaceState(
+            { ...curState, isBase: true },
+            "",
+            window.location.href
+          );
+          window.history.pushState(
+            { ...curState, exitGuard: true, t: Date.now() },
+            "",
+            window.location.href
+          );
+          console.log("[ExitConfirmGuard] armed with exactly 1 exitGuard entry");
+        }
       } catch (e) {}
     };
 
-    // 마운트 시 가드 적재
-    pushGuard();
+    armGuard();
 
-    // 2. 사용자의 첫 터치/클릭 시 실제 브라우저 User Gesture 활성화 컨텍스트에서 가드 적재
-    // 크롬의 History Manipulation Intervention(비활성 히스토리 스킵 정책)을 통과하도록 보장
+    // 2. 실제 브라우저 User Gesture 활성화 컨텍스트에서 현재 가드 엔트리를 갱신
+    // (replaceState로 교체하므로 히스토리 스택 길이가 늘어나지 않음)
     const onUserInteraction = () => {
-      if (!hasActivatedWithGesture) {
-        hasActivatedWithGesture = true;
-        pushGuard();
-      }
+      if (isExitingRef.current) return;
+      try {
+        const curState = window.history.state || {};
+        if (curState.exitGuard && !curState.active) {
+          window.history.replaceState(
+            { ...curState, exitGuard: true, active: true },
+            "",
+            window.location.href
+          );
+          console.log("[ExitConfirmGuard] activated guard entry with user gesture");
+        }
+      } catch (e) {}
     };
 
-    window.addEventListener("pointerdown", onUserInteraction, { passive: true });
-    window.addEventListener("touchstart", onUserInteraction, { passive: true });
+    window.addEventListener("pointerup", onUserInteraction, { passive: true });
+    window.addEventListener("touchend", onUserInteraction, { passive: true });
     window.addEventListener("click", onUserInteraction, { passive: true });
 
     // 3. 하드웨어 뒤로가기 popstate 처리
@@ -57,19 +71,22 @@ export function ExitConfirmGuard() {
         state: e.state,
         historyLength: window.history.length,
         isConfirmOpen: showConfirmRef.current,
+        isExiting: isExitingRef.current,
       });
 
-      if (showConfirmRef.current) {
-        // 이미 종료 팝업이 열려 있는 상태에서 한 번 더 뒤로가기를 누른 경우:
-        // 모달을 닫고 기본 브라우저 뒤로가기 흐름을 그대로 두어 앱이 자연스럽게 종료됩니다.
-        console.log("[ExitConfirmGuard] second back while modal open -> natural app exit");
-        setShowConfirm(false);
+      if (isExitingRef.current) {
         return;
       }
 
-      // 첫 뒤로가기: 종료 확인 모달을 화면에 표시
-      // ※ popstate 실행 중에 동기적으로 pushState를 호출하면 Next.js 라우터와 충돌하여
-      //    페이지 리로드/언마운트가 발생하므로, 모달만 띄우고 가드는 취소 시에 재적재합니다.
+      // 이미 종료 팝업이 열려 있는 상태에서 한 번 더 뒤로가기를 누른 경우:
+      // 즉시 앱 종료 절차 실행
+      if (showConfirmRef.current) {
+        console.log("[ExitConfirmGuard] double-back while modal open -> exit app");
+        handleConfirmExit();
+        return;
+      }
+
+      // 첫 뒤로가기: 종료 확인 모달 표시
       setShowConfirm(true);
     }
 
@@ -77,8 +94,8 @@ export function ExitConfirmGuard() {
 
     return () => {
       window.removeEventListener("popstate", handlePopState);
-      window.removeEventListener("pointerdown", onUserInteraction);
-      window.removeEventListener("touchstart", onUserInteraction);
+      window.removeEventListener("pointerup", onUserInteraction);
+      window.removeEventListener("touchend", onUserInteraction);
       window.removeEventListener("click", onUserInteraction);
     };
   }, [pathname]);
@@ -89,7 +106,7 @@ export function ExitConfirmGuard() {
     try {
       const curState = window.history.state || {};
       window.history.pushState(
-        { ...curState, exitGuard: true, t: Date.now() },
+        { ...curState, exitGuard: true, active: true, t: Date.now() },
         "",
         window.location.href
       );
@@ -98,11 +115,29 @@ export function ExitConfirmGuard() {
 
   // [확인] 버튼 클릭: 앱 종료
   function handleConfirmExit() {
+    isExitingRef.current = true;
     setShowConfirm(false);
+
+    // 1. 네이티브 TWA 종료 시도 (Android Custom Scheme Deep Link)
+    try {
+      window.location.href = "babymenu://exit";
+    } catch (e) {}
+
+    // 2. 브라우저 창 닫기 시도
     try {
       window.close();
     } catch (e) {}
-    window.history.back();
+
+    // 3. TWA 세션 스택 최하단으로 back 이동 (TWA 액티비티 자동 종료 트리거)
+    setTimeout(() => {
+      try {
+        window.history.go(-window.history.length);
+      } catch (e) {
+        try {
+          window.history.back();
+        } catch (e2) {}
+      }
+    }, 50);
   }
 
   if (!showConfirm) return null;
