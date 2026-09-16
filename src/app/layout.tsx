@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import NextTopLoader from "nextjs-toploader";
 import "./globals.css";
 import { RegisterServiceWorker } from "@/components/RegisterServiceWorker";
 import { AndroidBackHandler } from "@/components/AndroidBackHandler";
@@ -30,6 +31,17 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="ko">
       <body>
+        <NextTopLoader
+          color="#FF7A59"
+          initialPosition={0.08}
+          crawlSpeed={200}
+          height={3}
+          crawl={true}
+          showSpinner={false}
+          easing="ease"
+          speed={200}
+          shadow="0 0 10px #FF7A59,0 0 5px #FF7A59"
+        />
         <RegisterServiceWorker />
         <AndroidBackHandler />
         {children}

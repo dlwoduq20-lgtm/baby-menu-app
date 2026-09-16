@@ -220,7 +220,7 @@ export function PantryReadySection({
                 {/* 상세 보기 링크 */}
                 <Link
                   href={`/recipe/${recipe.id}`}
-                  className="mt-3 block w-full rounded-pill border border-line bg-cream/70 py-2 text-center text-xs font-bold text-ink transition-colors hover:bg-coral-pale hover:text-coral-deep"
+                  className="mt-3 block w-full rounded-pill border border-line bg-cream/70 py-2 text-center text-xs font-bold text-ink transition-all duration-150 hover:bg-coral-pale hover:text-coral-deep active:scale-[0.98] active:bg-coral-pale"
                 >
                   레시피 조리법 보기 →
                 </Link>

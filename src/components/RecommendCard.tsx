@@ -94,7 +94,7 @@ export function RecommendCard({
       </div>
       <Link
         href={`/recipe/${recipe.id}`}
-        className={`mt-3.5 block w-full rounded-pill py-3 text-center text-[14.5px] font-bold text-white ${
+        className={`mt-3.5 block w-full rounded-pill py-3 text-center text-[14.5px] font-bold text-white transition-all duration-150 active:scale-[0.98] active:opacity-90 ${
           quick ? "bg-coral-deep" : "bg-ink"
         }`}
       >

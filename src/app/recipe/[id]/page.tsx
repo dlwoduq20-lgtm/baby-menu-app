@@ -48,7 +48,7 @@ export default async function RecipeDetailPage({ params }: { params: { id: strin
   return (
     <div className="mx-auto min-h-screen max-w-[430px] bg-cream pb-10">
       <div className="flex items-center gap-3.5 bg-cream-deep px-5 pb-5 pt-11">
-        <Link href="/home" className="flex h-[34px] w-[34px] items-center justify-center rounded-full bg-white text-sm shadow-sm">
+        <Link href="/home" className="flex h-[34px] w-[34px] items-center justify-center rounded-full bg-white text-sm shadow-sm transition-transform duration-150 active:scale-90 active:bg-coral-pale">
           ←
         </Link>
         <h2 className="font-display text-lg">레시피 상세</h2>
