@@ -26,8 +26,9 @@ export function IntroSplash() {
     } catch (e) {}
     hasShownIntro = true;
 
-    const leaveTimer = setTimeout(() => setStage("leaving"), 1200);
-    const hideTimer = setTimeout(() => setStage("hidden"), 1600);
+    // 네이티브 스플래시가 이미 완성형으로 떴으므로 웹 인트로는 150ms 후 부드럽게 페이드아웃 전환
+    const leaveTimer = setTimeout(() => setStage("leaving"), 150);
+    const hideTimer = setTimeout(() => setStage("hidden"), 400);
     return () => {
       clearTimeout(leaveTimer);
       clearTimeout(hideTimer);
