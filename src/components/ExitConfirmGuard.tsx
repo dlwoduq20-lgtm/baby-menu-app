@@ -8,6 +8,7 @@ export function ExitConfirmGuard() {
   const [showConfirm, setShowConfirm] = useState(false);
   const showConfirmRef = useRef(false);
   const isExitingRef = useRef(false);
+  const lastNavBackTimeRef = useRef(0);
 
   useEffect(() => {
     showConfirmRef.current = showConfirm;
@@ -51,6 +52,14 @@ export function ExitConfirmGuard() {
     // 하드웨어 뒤로가기 감지 (hashchange + popstate 2중 감지)
     const handleNavBack = () => {
       if (isExitingRef.current) return;
+
+      // 동일 뒤로가기에 대해 브라우저가 popstate와 hashchange를 200ms 이내에 중복 발생시키는 현상 차단
+      const now = Date.now();
+      if (now - lastNavBackTimeRef.current < 200) {
+        console.log("[ExitConfirmGuard] ignored duplicate browser event within 200ms");
+        return;
+      }
+      lastNavBackTimeRef.current = now;
 
       console.log("[ExitConfirmGuard] back navigation detected! hash:", window.location.hash);
 
