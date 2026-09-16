@@ -1,8 +1,9 @@
+import { Suspense } from "react";
 import type { Metadata, Viewport } from "next";
-import NextTopLoader from "nextjs-toploader";
 import "./globals.css";
 import { RegisterServiceWorker } from "@/components/RegisterServiceWorker";
 import { AndroidBackHandler } from "@/components/AndroidBackHandler";
+import { CenterLoadingOverlay } from "@/components/CenterLoadingOverlay";
 
 // STEP 12: PWA 설치를 위한 manifest 연결 + iOS 홈 화면 아이콘/상태바 메타데이터
 export const metadata: Metadata = {
@@ -31,17 +32,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="ko">
       <body>
-        <NextTopLoader
-          color="#FF7A59"
-          initialPosition={0.08}
-          crawlSpeed={200}
-          height={3}
-          crawl={true}
-          showSpinner={false}
-          easing="ease"
-          speed={200}
-          shadow="0 0 10px #FF7A59,0 0 5px #FF7A59"
-        />
+        <Suspense fallback={null}>
+          <CenterLoadingOverlay />
+        </Suspense>
         <RegisterServiceWorker />
         <AndroidBackHandler />
         {children}
@@ -49,3 +42,4 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     </html>
   );
 }
+
