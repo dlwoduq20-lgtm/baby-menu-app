@@ -31,8 +31,8 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="ko">
-      <body>
+    <html lang="ko" style={{ backgroundColor: "#FF8A65" }}>
+      <body style={{ backgroundColor: "#FF8A65" }}>
         <IntroSplash />
         <Suspense fallback={null}>
           <CenterLoadingOverlay />

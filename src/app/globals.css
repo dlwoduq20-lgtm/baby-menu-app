@@ -14,7 +14,7 @@
 
 html,
 body {
-  background: #ede6dc; /* 폰 프레임 바깥 배경 */
+  background: #FF8A65; /* 앱 코랄 테마 배경 (네이티브 스플래시와 100% 일치) */
   font-family: var(--font-system);
   color: #3b2e28;
 }

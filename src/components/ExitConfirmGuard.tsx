@@ -15,24 +15,33 @@ export function ExitConfirmGuard() {
 
     console.log("[ExitConfirmGuard] mounted on pathname:", pathname);
 
-    // 홈 진입 시 가드용 더미 엔트리 1개 적재
-    const pushGuard = () => {
+    let hasActivatedWithGesture = false;
+
+    // 1. 홈 진입 시 초기 가드 엔트리 적재
+    const pushGuard = (force = false) => {
       try {
-        if (!window.history.state?.exitGuard) {
-          window.history.pushState({ exitGuard: true }, "", window.location.href);
-          console.log("[ExitConfirmGuard] pushed exitGuard state");
+        if (force || !window.history.state?.exitGuard) {
+          window.history.pushState({ exitGuard: true, t: Date.now() }, "", window.location.href);
+          console.log("[ExitConfirmGuard] pushed exitGuard state, force:", force);
         }
       } catch (e) {}
     };
 
-    pushGuard();
+    pushGuard(false);
 
-    // 사용자의 첫 터치 인터랙션 시에도 히스토리 가드가 브라우저 제스처 정책을 통과하도록 보장
-    const onUserTouch = () => {
-      pushGuard();
+    // 2. 사용자의 첫 터치/클릭 인터랙션 발생 시!
+    // 크롬의 History Manipulation Intervention은 사용자 제스처 없이 push된 엔트리를 뒤로가기 시 스킵합니다.
+    // 사용자가 화면을 터치하는 순간, 실제 사용자 제스처 컨텍스트 안에서 새 가드 엔트리를 강제로 pushState하여
+    // 브라우저가 이 엔트리를 '유효한 네비게이션'으로 인식하도록 만듭니다.
+    const onUserInteraction = () => {
+      if (!hasActivatedWithGesture) {
+        hasActivatedWithGesture = true;
+        pushGuard(true);
+      }
     };
-    window.addEventListener("pointerdown", onUserTouch, { passive: true });
-    window.addEventListener("touchstart", onUserTouch, { passive: true });
+    window.addEventListener("pointerdown", onUserInteraction, { passive: true });
+    window.addEventListener("touchstart", onUserInteraction, { passive: true });
+    window.addEventListener("click", onUserInteraction, { passive: true });
 
     function handlePopState(e: PopStateEvent) {
       console.log("[ExitConfirmGuard] popstate fired!", {
@@ -48,7 +57,7 @@ export function ExitConfirmGuard() {
           return false;
         }
         // 첫 뒤로가기: 트랩 유지 후 팝업 노출
-        pushGuard();
+        pushGuard(true);
         return true;
       });
     }
@@ -56,8 +65,9 @@ export function ExitConfirmGuard() {
     window.addEventListener("popstate", handlePopState);
     return () => {
       window.removeEventListener("popstate", handlePopState);
-      window.removeEventListener("pointerdown", onUserTouch);
-      window.removeEventListener("touchstart", onUserTouch);
+      window.removeEventListener("pointerdown", onUserInteraction);
+      window.removeEventListener("touchstart", onUserInteraction);
+      window.removeEventListener("click", onUserInteraction);
     };
   }, [pathname]);
 

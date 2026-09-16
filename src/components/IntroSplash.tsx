@@ -38,7 +38,7 @@ export function IntroSplash() {
 
   return (
     <div
-      className={`fixed inset-0 z-[10000] flex flex-col items-center justify-center bg-coral-deep transition-opacity duration-400 ${
+      className={`fixed inset-0 z-[10000] flex flex-col items-center justify-center bg-coral transition-opacity duration-400 ${
         stage === "leaving" ? "opacity-0 pointer-events-none" : "opacity-100"
       }`}
     >
