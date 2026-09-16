@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
@@ -6,7 +7,30 @@ import { computeDailyMenu } from "@/lib/service/dailyMenu";
 import { RecommendCard } from "@/components/RecommendCard";
 import { PantryReadySection } from "@/components/PantryReadySection";
 
-export default async function HomePage() {
+function HomeSkeleton() {
+  return (
+    <div className="mx-auto min-h-screen max-w-[430px] bg-cream pb-8">
+      <div className="relative overflow-hidden bg-gradient-to-b from-cream-deep to-cream px-[22px] pb-[26px] pt-11">
+        <div className="mb-4 h-7 w-40 animate-pulse rounded-pill bg-white/70 shadow-sm" />
+        <h1 className="font-display text-[26px] leading-snug">
+          오늘 저녁,
+          <br />
+          <span className="text-coral-deep">뭐 먹이지?</span>
+        </h1>
+        <div className="mt-1.5 h-4 w-32 animate-pulse rounded bg-black/5" />
+      </div>
+
+      <div className="px-[22px]">
+        <div className="mb-3 mt-5 h-16 animate-pulse rounded-2xl bg-coral-pale/30 border border-coral-pale" />
+        <div className="mb-5 h-20 animate-pulse rounded-2xl bg-[#F0F9F4] border border-[#C8EAD6]" />
+        <div className="mb-2.5 mt-5 h-4 w-20 animate-pulse rounded bg-coral/20" />
+        <div className="mb-4 h-36 animate-pulse rounded-2xl bg-white border border-line" />
+      </div>
+    </div>
+  );
+}
+
+async function HomeContent() {
   const supabase = createClient();
 
   const {
@@ -177,5 +201,13 @@ export default async function HomePage() {
         </Link>
       </div>
     </div>
+  );
+}
+
+export default function HomePage() {
+  return (
+    <Suspense fallback={<HomeSkeleton />}>
+      <HomeContent />
+    </Suspense>
   );
 }

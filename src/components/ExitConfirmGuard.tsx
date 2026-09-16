@@ -8,7 +8,7 @@ export function ExitConfirmGuard() {
   const [showConfirm, setShowConfirm] = useState(false);
   const showConfirmRef = useRef(false);
   const isExitingRef = useRef(false);
-  const lastNavBackTimeRef = useRef(0);
+  const isArmedRef = useRef(false);
 
   useEffect(() => {
     showConfirmRef.current = showConfirm;
@@ -18,82 +18,61 @@ export function ExitConfirmGuard() {
     // 홈 화면(/home 또는 /)에서만 뒤로가기 종료 가드 활성화
     if (pathname !== "/home" && pathname !== "/") {
       setShowConfirm(false);
+      isArmedRef.current = false;
       return;
     }
 
-    const HASH_TAG = "#ready";
-
     const armGuard = () => {
-      if (isExitingRef.current) return;
+      if (isExitingRef.current || isArmedRef.current) return;
       try {
-        if (window.location.hash === HASH_TAG) {
-          window.history.replaceState({ isBase: true }, "", window.location.pathname);
-          window.history.pushState({ exitGuard: true }, "", HASH_TAG);
-        } else {
-          window.history.replaceState({ isBase: true }, "", window.location.href);
-          window.history.pushState({ exitGuard: true }, "", HASH_TAG);
-        }
-        console.log("[ExitConfirmGuard] armed with base + #ready guard");
+        window.history.pushState({ isExitGuard: true }, "", window.location.href);
+        isArmedRef.current = true;
       } catch (e) {}
     };
 
-    // 마운트 시 즉시 가드 적재
+    // 마운트 시 가드 1차 적재
     armGuard();
 
-    // 첫 터치/클릭 시에도 가드가 혹시 안 걸려 있으면 재적재
+    // 사용자가 화면을 터치/클릭하는 순간(User Activation)에도 가드 확실히 보장
     const onUserInteraction = () => {
-      if (window.location.hash !== HASH_TAG && !showConfirmRef.current && !isExitingRef.current) {
+      if (!isArmedRef.current && !showConfirmRef.current && !isExitingRef.current) {
         armGuard();
       }
     };
-    window.addEventListener("pointerup", onUserInteraction, { passive: true });
-    window.addEventListener("touchend", onUserInteraction, { passive: true });
+    window.addEventListener("pointerdown", onUserInteraction, { passive: true });
+    window.addEventListener("touchstart", onUserInteraction, { passive: true });
 
-    // 하드웨어 뒤로가기 감지 (hashchange + popstate 2중 감지)
-    const handleNavBack = () => {
+    // 하드웨어 뒤로가기 감지
+    const handlePopState = () => {
       if (isExitingRef.current) return;
-
-      // 동일 뒤로가기에 대해 브라우저가 popstate와 hashchange를 200ms 이내에 중복 발생시키는 현상 차단
-      const now = Date.now();
-      if (now - lastNavBackTimeRef.current < 200) {
-        console.log("[ExitConfirmGuard] ignored duplicate browser event within 200ms");
-        return;
-      }
-      lastNavBackTimeRef.current = now;
-
-      console.log("[ExitConfirmGuard] back navigation detected! hash:", window.location.hash);
+      isArmedRef.current = false;
 
       // 모달이 이미 열려 있는 상태에서 한 번 더 뒤로가기를 누른 경우 -> 더블 백 즉시 앱 종료
       if (showConfirmRef.current) {
-        console.log("[ExitConfirmGuard] double-back while modal open -> exit app");
         handleConfirmExit();
         return;
       }
 
-      // 뒤로가기로 #ready 해시가 벗겨졌을 때 종료 확인 모달 표시
-      if (window.location.hash !== HASH_TAG) {
-        setShowConfirm(true);
-      }
+      // 첫 번째 뒤로가기: 종료 확인 모달 노출
+      setShowConfirm(true);
     };
 
-    window.addEventListener("hashchange", handleNavBack);
-    window.addEventListener("popstate", handleNavBack);
+    window.addEventListener("popstate", handlePopState);
 
     return () => {
-      window.removeEventListener("hashchange", handleNavBack);
-      window.removeEventListener("popstate", handleNavBack);
-      window.removeEventListener("pointerup", onUserInteraction);
-      window.removeEventListener("touchend", onUserInteraction);
+      window.removeEventListener("popstate", handlePopState);
+      window.removeEventListener("pointerdown", onUserInteraction);
+      window.removeEventListener("touchstart", onUserInteraction);
     };
   }, [pathname]);
 
-  // [취소] 버튼 클릭: 모달을 닫고 #ready 가드 재적재
+  // [취소] 버튼 클릭: 모달 닫고 가드 재적재
   function handleCancel() {
     setShowConfirm(false);
+    isArmedRef.current = false;
     try {
-      if (window.location.hash !== "#ready") {
-        window.history.pushState({ exitGuard: true }, "", "#ready");
-      }
+      window.history.pushState({ isExitGuard: true }, "", window.location.href);
+      isArmedRef.current = true;
     } catch (e) {}
   }
 
@@ -107,21 +86,15 @@ export function ExitConfirmGuard() {
       window.location.href = "babymenu://exit";
     } catch (e) {}
 
-    // 2. 브라우저 창 닫기 시도
-    try {
-      window.close();
-    } catch (e) {}
-
-    // 3. 브라우저 세션 스택 최하단으로 back
+    // 2. 브라우저 창 닫기 및 세션 백 시도
     setTimeout(() => {
       try {
-        window.history.go(-window.history.length);
-      } catch (e) {
-        try {
-          window.history.back();
-        } catch (e2) {}
-      }
-    }, 50);
+        window.close();
+      } catch (e) {}
+      try {
+        window.history.back();
+      } catch (e2) {}
+    }, 80);
   }
 
   if (!showConfirm) return null;
@@ -150,3 +123,4 @@ export function ExitConfirmGuard() {
     </div>
   );
 }
+
