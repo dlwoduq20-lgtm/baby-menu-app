@@ -1,39 +1,56 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 
 let hasShownIntro = false;
 
 export function IntroSplash() {
+  const pathname = usePathname();
+
   const [stage, setStage] = useState<"visible" | "leaving" | "hidden">(() => {
     if (typeof window !== "undefined") {
       try {
-        if (hasShownIntro || sessionStorage.getItem("introShown")) {
+        const today = new Date().toISOString().slice(0, 10);
+        const lastShown = localStorage.getItem("introShownDate");
+        if (hasShownIntro || lastShown === today || sessionStorage.getItem("introShown")) {
           return "hidden";
         }
       } catch (e) {}
     }
-    return "visible";
+    return "hidden";
   });
 
   useEffect(() => {
+    // 오직 루트 또는 홈 화면 진입 시에만 판정
+    if (pathname !== "/home" && pathname !== "/") {
+      setStage("hidden");
+      return;
+    }
+
     try {
-      if (hasShownIntro || sessionStorage.getItem("introShown")) {
+      const today = new Date().toISOString().slice(0, 10);
+      const lastShown = localStorage.getItem("introShownDate");
+      if (hasShownIntro || lastShown === today || sessionStorage.getItem("introShown")) {
         setStage("hidden");
         return;
       }
+      localStorage.setItem("introShownDate", today);
       sessionStorage.setItem("introShown", "true");
-    } catch (e) {}
+    } catch (e) {
+      return;
+    }
     hasShownIntro = true;
 
-    // 네이티브 스플래시가 이미 완성형으로 떴으므로 웹 인트로는 150ms 후 부드럽게 페이드아웃 전환
+    // 오늘 첫 실행(콜드 런치) 시에만 잠깐 노출 후 즉시 페이드아웃
+    setStage("visible");
     const leaveTimer = setTimeout(() => setStage("leaving"), 150);
     const hideTimer = setTimeout(() => setStage("hidden"), 400);
     return () => {
       clearTimeout(leaveTimer);
       clearTimeout(hideTimer);
     };
-  }, []);
+  }, [pathname]);
 
   if (stage === "hidden") return null;
 
