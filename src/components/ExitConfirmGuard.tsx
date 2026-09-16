@@ -25,18 +25,28 @@ export function ExitConfirmGuard() {
     const armGuard = () => {
       if (isExitingRef.current) return;
       try {
-        if (window.location.hash !== HASH_TAG) {
-          window.location.hash = "ready";
-          console.log("[ExitConfirmGuard] armed with hash guard #ready");
+        if (window.location.hash === HASH_TAG) {
+          window.history.replaceState({ isBase: true }, "", window.location.pathname);
+          window.history.pushState({ exitGuard: true }, "", HASH_TAG);
+        } else {
+          window.history.replaceState({ isBase: true }, "", window.location.href);
+          window.history.pushState({ exitGuard: true }, "", HASH_TAG);
         }
+        console.log("[ExitConfirmGuard] armed with base + #ready guard");
       } catch (e) {}
     };
 
-    // 마운트 시 즉시 해시 가드 장착 (사용자 제스처 없어도 브라우저가 스킵 불가)
+    // 마운트 시 즉시 가드 적재
     armGuard();
 
-    // 첫 터치/클릭 시에도 재확인
-    window.addEventListener("pointerup", armGuard, { passive: true, once: true });
+    // 첫 터치/클릭 시에도 가드가 혹시 안 걸려 있으면 재적재
+    const onUserInteraction = () => {
+      if (window.location.hash !== HASH_TAG && !showConfirmRef.current && !isExitingRef.current) {
+        armGuard();
+      }
+    };
+    window.addEventListener("pointerup", onUserInteraction, { passive: true });
+    window.addEventListener("touchend", onUserInteraction, { passive: true });
 
     // 하드웨어 뒤로가기 감지 (hashchange + popstate 2중 감지)
     const handleNavBack = () => {
@@ -46,7 +56,7 @@ export function ExitConfirmGuard() {
 
       // 모달이 이미 열려 있는 상태에서 한 번 더 뒤로가기를 누른 경우 -> 더블 백 즉시 앱 종료
       if (showConfirmRef.current) {
-        console.log("[ExitConfirmGuard] second back while modal open -> exit app");
+        console.log("[ExitConfirmGuard] double-back while modal open -> exit app");
         handleConfirmExit();
         return;
       }
@@ -63,15 +73,18 @@ export function ExitConfirmGuard() {
     return () => {
       window.removeEventListener("hashchange", handleNavBack);
       window.removeEventListener("popstate", handleNavBack);
-      window.removeEventListener("pointerup", armGuard);
+      window.removeEventListener("pointerup", onUserInteraction);
+      window.removeEventListener("touchend", onUserInteraction);
     };
   }, [pathname]);
 
-  // [취소] 버튼 클릭: 모달을 닫고 해시 가드 재장착
+  // [취소] 버튼 클릭: 모달을 닫고 #ready 가드 재적재
   function handleCancel() {
     setShowConfirm(false);
     try {
-      window.location.hash = "ready";
+      if (window.location.hash !== "#ready") {
+        window.history.pushState({ exitGuard: true }, "", "#ready");
+      }
     } catch (e) {}
   }
 
