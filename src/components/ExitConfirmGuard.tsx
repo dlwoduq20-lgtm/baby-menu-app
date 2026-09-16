@@ -14,111 +14,73 @@ export function ExitConfirmGuard() {
   }, [showConfirm]);
 
   useEffect(() => {
-    if (pathname !== "/home") {
+    // 홈 화면(/home 또는 /)에서만 뒤로가기 종료 가드 활성화
+    if (pathname !== "/home" && pathname !== "/") {
       setShowConfirm(false);
       return;
     }
 
-    console.log("[ExitConfirmGuard] mounted on pathname:", pathname);
+    const HASH_TAG = "#ready";
 
-    // 1. Next.js 내부 상태(__NA 등)를 보존하며 Base -> Guard 1개만 정확히 적재
     const armGuard = () => {
       if (isExitingRef.current) return;
       try {
-        const curState = window.history.state || {};
-        if (!curState.exitGuard) {
-          window.history.replaceState(
-            { ...curState, isBase: true },
-            "",
-            window.location.href
-          );
-          window.history.pushState(
-            { ...curState, exitGuard: true, t: Date.now() },
-            "",
-            window.location.href
-          );
-          console.log("[ExitConfirmGuard] armed with exactly 1 exitGuard entry");
+        if (window.location.hash !== HASH_TAG) {
+          window.location.hash = "ready";
+          console.log("[ExitConfirmGuard] armed with hash guard #ready");
         }
       } catch (e) {}
     };
 
+    // 마운트 시 즉시 해시 가드 장착 (사용자 제스처 없어도 브라우저가 스킵 불가)
     armGuard();
 
-    // 2. 실제 브라우저 User Gesture 활성화 컨텍스트에서 현재 가드 엔트리를 갱신
-    // (replaceState로 교체하므로 히스토리 스택 길이가 늘어나지 않음)
-    const onUserInteraction = () => {
+    // 첫 터치/클릭 시에도 재확인
+    window.addEventListener("pointerup", armGuard, { passive: true, once: true });
+
+    // 하드웨어 뒤로가기 감지 (hashchange + popstate 2중 감지)
+    const handleNavBack = () => {
       if (isExitingRef.current) return;
-      try {
-        const curState = window.history.state || {};
-        if (curState.exitGuard && !curState.active) {
-          window.history.replaceState(
-            { ...curState, exitGuard: true, active: true },
-            "",
-            window.location.href
-          );
-          console.log("[ExitConfirmGuard] activated guard entry with user gesture");
-        }
-      } catch (e) {}
-    };
 
-    window.addEventListener("pointerup", onUserInteraction, { passive: true });
-    window.addEventListener("touchend", onUserInteraction, { passive: true });
-    window.addEventListener("click", onUserInteraction, { passive: true });
+      console.log("[ExitConfirmGuard] back navigation detected! hash:", window.location.hash);
 
-    // 3. 하드웨어 뒤로가기 popstate 처리
-    function handlePopState(e: PopStateEvent) {
-      console.log("[ExitConfirmGuard] popstate fired!", {
-        state: e.state,
-        historyLength: window.history.length,
-        isConfirmOpen: showConfirmRef.current,
-        isExiting: isExitingRef.current,
-      });
-
-      if (isExitingRef.current) {
-        return;
-      }
-
-      // 이미 종료 팝업이 열려 있는 상태에서 한 번 더 뒤로가기를 누른 경우:
-      // 즉시 앱 종료 절차 실행
+      // 모달이 이미 열려 있는 상태에서 한 번 더 뒤로가기를 누른 경우 -> 더블 백 즉시 앱 종료
       if (showConfirmRef.current) {
-        console.log("[ExitConfirmGuard] double-back while modal open -> exit app");
+        console.log("[ExitConfirmGuard] second back while modal open -> exit app");
         handleConfirmExit();
         return;
       }
 
-      // 첫 뒤로가기: 종료 확인 모달 표시
-      setShowConfirm(true);
-    }
+      // 뒤로가기로 #ready 해시가 벗겨졌을 때 종료 확인 모달 표시
+      if (window.location.hash !== HASH_TAG) {
+        setShowConfirm(true);
+      }
+    };
 
-    window.addEventListener("popstate", handlePopState);
+    window.addEventListener("hashchange", handleNavBack);
+    window.addEventListener("popstate", handleNavBack);
 
     return () => {
-      window.removeEventListener("popstate", handlePopState);
-      window.removeEventListener("pointerup", onUserInteraction);
-      window.removeEventListener("touchend", onUserInteraction);
-      window.removeEventListener("click", onUserInteraction);
+      window.removeEventListener("hashchange", handleNavBack);
+      window.removeEventListener("popstate", handleNavBack);
+      window.removeEventListener("pointerup", armGuard);
     };
   }, [pathname]);
 
-  // [취소] 버튼 클릭: 모달을 닫고 가드 히스토리 1개 재적재
+  // [취소] 버튼 클릭: 모달을 닫고 해시 가드 재장착
   function handleCancel() {
     setShowConfirm(false);
     try {
-      const curState = window.history.state || {};
-      window.history.pushState(
-        { ...curState, exitGuard: true, active: true, t: Date.now() },
-        "",
-        window.location.href
-      );
+      window.location.hash = "ready";
     } catch (e) {}
   }
 
-  // [확인] 버튼 클릭: 앱 종료
+  // [확인] 버튼 클릭: 앱 완전 종료
   function handleConfirmExit() {
     isExitingRef.current = true;
     setShowConfirm(false);
 
-    // 1. 네이티브 TWA 종료 시도 (Android Custom Scheme Deep Link)
+    // 1. 네이티브 TWA 종료 시도 (Android Intent Deep Link)
     try {
       window.location.href = "babymenu://exit";
     } catch (e) {}
@@ -128,7 +90,7 @@ export function ExitConfirmGuard() {
       window.close();
     } catch (e) {}
 
-    // 3. TWA 세션 스택 최하단으로 back 이동 (TWA 액티비티 자동 종료 트리거)
+    // 3. 브라우저 세션 스택 최하단으로 back
     setTimeout(() => {
       try {
         window.history.go(-window.history.length);
