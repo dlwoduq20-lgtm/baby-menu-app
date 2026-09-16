@@ -18,3 +18,16 @@ body {
   font-family: var(--font-system);
   color: #3b2e28;
 }
+
+@keyframes introPop {
+  0% { transform: scale(0.5); opacity: 0; }
+  60% { transform: scale(1.08); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+@keyframes introFade {
+  0% { opacity: 0; transform: translateY(8px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+.animate-intro-pop { animation: introPop 0.6s ease-out forwards; }
+.animate-intro-fade { animation: introFade 0.6s ease-out 0.3s forwards; opacity: 0; }
+
