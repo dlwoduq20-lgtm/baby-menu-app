@@ -1,7 +1,6 @@
 // STEP 10: 오후 4시 푸시 수신. STEP 12: 오프라인 캐싱 + 홈 화면 설치 지원 추가.
-// STEP 21: /home Stale-While-Revalidate 네비게이션 프리캐시 적용 (2.5초 흰 화면 0ms 완전 제거)
-
-const CACHE_NAME = "baby-menu-app-v21";
+// STEP 22: 메인 화면 뒤로가기 종료 가드 갱신 및 캐시 완전 삭제 적용
+const CACHE_NAME = "baby-menu-app-v22";
 const PRECACHE_URLS = [
   "/manifest.json",
   "/icon-192.png",

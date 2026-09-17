@@ -8,7 +8,12 @@ const HASH_READY = "#ready";
 export function ExitConfirmGuard() {
   const pathname = usePathname();
   const [showConfirm, setShowConfirm] = useState(false);
+  const showConfirmRef = useRef(false);
   const isExitingRef = useRef(false);
+
+  useEffect(() => {
+    showConfirmRef.current = showConfirm;
+  }, [showConfirm]);
 
   const isHome = !pathname || pathname === "/" || pathname === "/home" || pathname.startsWith("/home");
 
@@ -18,7 +23,7 @@ export function ExitConfirmGuard() {
       return;
     }
 
-    // Arm guard on home entry: DO NOT call replaceState (preserves Next.js internal router state)
+    // Arm guard on home entry: preserve Next.js internal router state (NO replaceState)
     const armGuard = () => {
       if (isExitingRef.current) return;
       try {
@@ -28,11 +33,27 @@ export function ExitConfirmGuard() {
       } catch (e) {}
     };
 
-    // Small timeout ensures Next.js hydration and router initialization are settled
+    // 1. Initial mount arming (after router initialization)
     const timer = setTimeout(armGuard, 100);
 
+    // 2. User touch/gesture arming: guarantees user-activation stamp in Chrome
+    const handleUserGesture = () => {
+      armGuard();
+    };
+
+    window.addEventListener("touchstart", handleUserGesture, { passive: true });
+    window.addEventListener("pointerdown", handleUserGesture, { passive: true });
+    window.addEventListener("click", handleUserGesture, { passive: true });
+
+    // 3. Popstate event listener for hardware Back button
     const handlePopState = () => {
       if (isExitingRef.current) return;
+
+      // If modal is ALREADY open, second Back press confirms immediate exit (double back)
+      if (showConfirmRef.current) {
+        handleConfirmExit();
+        return;
+      }
 
       // When the user went back from #ready to /home (hash is now empty)
       if (window.location.hash !== HASH_READY) {
@@ -44,6 +65,9 @@ export function ExitConfirmGuard() {
 
     return () => {
       clearTimeout(timer);
+      window.removeEventListener("touchstart", handleUserGesture);
+      window.removeEventListener("pointerdown", handleUserGesture);
+      window.removeEventListener("click", handleUserGesture);
       window.removeEventListener("popstate", handlePopState);
     };
   }, [isHome]);

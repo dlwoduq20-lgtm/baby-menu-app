@@ -14,6 +14,14 @@ export function RegisterServiceWorker() {
         .catch(() => {
           // 서비스워커 등록 실패는 조용히 무시
         });
+
+      let refreshing = false;
+      navigator.serviceWorker.addEventListener("controllerchange", () => {
+        if (!refreshing) {
+          refreshing = true;
+          window.location.reload();
+        }
+      });
     }
   }, []);
 

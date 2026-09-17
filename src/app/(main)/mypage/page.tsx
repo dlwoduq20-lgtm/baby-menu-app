@@ -54,6 +54,7 @@ export default async function MyPage() {
       <p className="mt-6 text-center text-[11px] text-ink-soft">
         본 서비스는 일반적인 식단 정보를 제공하며, 의료적 조언을 대체하지 않습니다.
       </p>
+      <p className="mt-2 text-center text-[11px] text-ink-muted">버전 1.0.12 (최신)</p>
     </div>
   );
 }
