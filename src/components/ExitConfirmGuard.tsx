@@ -46,6 +46,7 @@ export function ExitConfirmGuard() {
     window.addEventListener("touchstart", onUserInteraction, { passive: true, capture: true });
     window.addEventListener("pointerdown", onUserInteraction, { passive: true, capture: true });
     window.addEventListener("click", onUserInteraction, { passive: true, capture: true });
+    window.addEventListener("scroll", onUserInteraction, { passive: true, capture: true });
 
     // 3. Popstate back button listener
     const handlePopState = (event: PopStateEvent) => {
@@ -68,6 +69,7 @@ export function ExitConfirmGuard() {
       window.removeEventListener("touchstart", onUserInteraction, { capture: true });
       window.removeEventListener("pointerdown", onUserInteraction, { capture: true });
       window.removeEventListener("click", onUserInteraction, { capture: true });
+      window.removeEventListener("scroll", onUserInteraction, { capture: true });
     };
   }, [isHome, armGuard]);
 
@@ -77,25 +79,19 @@ export function ExitConfirmGuard() {
     armGuard();
   }
 
-  // [확인/종료] 버튼: 앱 완전 종료
+  // [확인/종료] 버튼: 부드러운 앱 종료
   function handleConfirmExit() {
     isExitingRef.current = true;
     setShowConfirm(false);
 
-    // 1. Android Intent Deep Link (Native TWA LauncherActivity will catch and finishAffinity)
+    // 1. Android Intent Deep Link (Native TWA LauncherActivity will call finishAffinity cleanly)
     try {
       window.location.href = "babymenu://exit";
-    } catch (e) {}
-
-    // 2. Browser standard close and pop fallback
-    setTimeout(() => {
+    } catch (e) {
       try {
         window.close();
-      } catch (e) {}
-      try {
-        window.history.back();
       } catch (e2) {}
-    }, 80);
+    }
   }
 
   if (!showConfirm) return null;
