@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { usePathname } from "next/navigation";
 
 export function ExitConfirmGuard() {
@@ -8,52 +8,56 @@ export function ExitConfirmGuard() {
   const [showConfirm, setShowConfirm] = useState(false);
   const showConfirmRef = useRef(false);
   const isExitingRef = useRef(false);
-  const isArmedRef = useRef(false);
+  const hasArmedRef = useRef(false);
 
   useEffect(() => {
     showConfirmRef.current = showConfirm;
   }, [showConfirm]);
 
+  const isHome = !pathname || pathname === "/" || pathname === "/home" || pathname.startsWith("/home");
+
+  const armGuard = useCallback(() => {
+    if (isExitingRef.current) return;
+    try {
+      // Chrome's History Manipulation Intervention skips pushState unless executed with a user gesture.
+      // Calling pushState directly inside user interaction handlers ensures genuine user activation.
+      window.history.pushState({ isExitGuard: true, timestamp: Date.now() }, "", window.location.href);
+      hasArmedRef.current = true;
+    } catch (e) {}
+  }, []);
+
   useEffect(() => {
-    // 홈 화면(/home 또는 /)에서만 뒤로가기 종료 가드 활성화
-    if (pathname !== "/home" && pathname !== "/") {
+    if (!isHome) {
       setShowConfirm(false);
-      isArmedRef.current = false;
+      hasArmedRef.current = false;
       return;
     }
 
-    const armGuard = () => {
-      if (isExitingRef.current || isArmedRef.current) return;
-      try {
-        window.history.pushState({ isExitGuard: true }, "", window.location.href);
-        isArmedRef.current = true;
-      } catch (e) {}
-    };
-
-    // 마운트 시 가드 1차 적재
+    // 1. Initial arm on mount
     armGuard();
 
-    // 사용자가 화면을 터치/클릭하는 순간(User Activation)에도 가드 확실히 보장
+    // 2. Continuous gesture re-arming:
+    // Whenever user touches, clicks, or scrolls the screen, ensure a user-activated history entry exists!
     const onUserInteraction = () => {
-      if (!isArmedRef.current && !showConfirmRef.current && !isExitingRef.current) {
-        armGuard();
-      }
+      if (isExitingRef.current || showConfirmRef.current) return;
+      armGuard();
     };
-    window.addEventListener("pointerdown", onUserInteraction, { passive: true });
-    window.addEventListener("touchstart", onUserInteraction, { passive: true });
 
-    // 하드웨어 뒤로가기 감지
-    const handlePopState = () => {
+    window.addEventListener("touchstart", onUserInteraction, { passive: true, capture: true });
+    window.addEventListener("pointerdown", onUserInteraction, { passive: true, capture: true });
+    window.addEventListener("click", onUserInteraction, { passive: true, capture: true });
+
+    // 3. Popstate back button listener
+    const handlePopState = (event: PopStateEvent) => {
       if (isExitingRef.current) return;
-      isArmedRef.current = false;
 
-      // 모달이 이미 열려 있는 상태에서 한 번 더 뒤로가기를 누른 경우 -> 더블 백 즉시 앱 종료
+      // If exit modal is already open, second back press immediately exits (Double-Back to Exit)
       if (showConfirmRef.current) {
         handleConfirmExit();
         return;
       }
 
-      // 첫 번째 뒤로가기: 종료 확인 모달 노출
+      // First back press: open exit confirmation modal
       setShowConfirm(true);
     };
 
@@ -61,32 +65,29 @@ export function ExitConfirmGuard() {
 
     return () => {
       window.removeEventListener("popstate", handlePopState);
-      window.removeEventListener("pointerdown", onUserInteraction);
-      window.removeEventListener("touchstart", onUserInteraction);
+      window.removeEventListener("touchstart", onUserInteraction, { capture: true });
+      window.removeEventListener("pointerdown", onUserInteraction, { capture: true });
+      window.removeEventListener("click", onUserInteraction, { capture: true });
     };
-  }, [pathname]);
+  }, [isHome, armGuard]);
 
-  // [취소] 버튼 클릭: 모달 닫고 가드 재적재
+  // [취소] 버튼: 모달 닫고 가드 즉시 재적재
   function handleCancel() {
     setShowConfirm(false);
-    isArmedRef.current = false;
-    try {
-      window.history.pushState({ isExitGuard: true }, "", window.location.href);
-      isArmedRef.current = true;
-    } catch (e) {}
+    armGuard();
   }
 
-  // [확인] 버튼 클릭: 앱 완전 종료
+  // [확인/종료] 버튼: 앱 완전 종료
   function handleConfirmExit() {
     isExitingRef.current = true;
     setShowConfirm(false);
 
-    // 1. 네이티브 TWA 종료 시도 (Android Intent Deep Link)
+    // 1. Android Intent Deep Link (Native TWA LauncherActivity will catch and finishAffinity)
     try {
       window.location.href = "babymenu://exit";
     } catch (e) {}
 
-    // 2. 브라우저 창 닫기 및 세션 백 시도
+    // 2. Browser standard close and pop fallback
     setTimeout(() => {
       try {
         window.close();
@@ -100,10 +101,14 @@ export function ExitConfirmGuard() {
   if (!showConfirm) return null;
 
   return (
-    <div className="fixed inset-0 z-[10001] flex items-center justify-center bg-black/40 px-8 backdrop-blur-[1px]">
-      <div className="w-full max-w-[300px] rounded-2xl bg-white p-5 text-center shadow-xl animate-intro-fade">
-        <p className="mb-4 font-display text-[15.5px] text-ink">앱을 종료하시겠습니까?</p>
-        <div className="flex gap-2">
+    <div className="fixed inset-0 z-[999999] flex items-center justify-center bg-black/50 px-6 backdrop-blur-sm animate-intro-fade">
+      <div className="w-full max-w-[300px] rounded-2xl bg-white p-5 text-center shadow-2xl">
+        <div className="mx-auto mb-2.5 flex h-11 w-11 items-center justify-center rounded-full bg-peach-light/40">
+          <span className="text-2xl">👋</span>
+        </div>
+        <h3 className="mb-1 font-display text-[16px] font-bold text-ink">앱을 종료하시겠습니까?</h3>
+        <p className="mb-4 text-[12px] text-ink-muted">오늘의 추천 식단을 확인하셨나요?</p>
+        <div className="flex gap-2.5">
           <button
             type="button"
             onClick={handleCancel}
@@ -116,7 +121,7 @@ export function ExitConfirmGuard() {
             onClick={handleConfirmExit}
             className="flex-1 rounded-pill bg-coral-deep py-2.5 text-[13.5px] font-bold text-white shadow-sm active:scale-95 transition-transform"
           >
-            확인
+            종료
           </button>
         </div>
       </div>
