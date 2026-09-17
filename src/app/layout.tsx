@@ -4,7 +4,6 @@ import "./globals.css";
 import { RegisterServiceWorker } from "@/components/RegisterServiceWorker";
 import { AndroidBackHandler } from "@/components/AndroidBackHandler";
 import { CenterLoadingOverlay } from "@/components/CenterLoadingOverlay";
-import { IntroSplash } from "@/components/IntroSplash";
 
 // STEP 12: PWA 설치를 위한 manifest 연결 + iOS 홈 화면 아이콘/상태바 메타데이터
 export const metadata: Metadata = {
@@ -33,7 +32,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="ko" style={{ backgroundColor: "#FF8A65" }}>
       <body style={{ backgroundColor: "#FF8A65" }}>
-        <IntroSplash />
         <Suspense fallback={null}>
           <CenterLoadingOverlay />
         </Suspense>
