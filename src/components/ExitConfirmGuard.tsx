@@ -10,7 +10,7 @@ export function ExitConfirmGuard() {
   const [showConfirm, setShowConfirm] = useState(false);
   const showConfirmRef = useRef(false);
   const isExitingRef = useRef(false);
-  const lastBackTimeRef = useRef(0);
+  const hasArmedInitiallyRef = useRef(false);
 
   useEffect(() => {
     showConfirmRef.current = showConfirm;
@@ -21,60 +21,35 @@ export function ExitConfirmGuard() {
   useEffect(() => {
     if (!isHome) {
       setShowConfirm(false);
+      hasArmedInitiallyRef.current = false;
       return;
     }
 
-    // Arm guard with base entry + #ready fragment entry
-    const armReadyGuard = () => {
-      if (isExitingRef.current) return;
+    // Arm guard once on entry to home (base /home + #ready)
+    if (!hasArmedInitiallyRef.current && !isExitingRef.current) {
+      hasArmedInitiallyRef.current = true;
       try {
         if (window.location.hash !== HASH_READY) {
           window.history.replaceState({ isBase: true }, "", window.location.pathname);
           window.history.pushState({ isReady: true }, "", window.location.pathname + HASH_READY);
         }
       } catch (e) {}
-    };
-
-    armReadyGuard();
+    }
 
     const handlePopState = () => {
       if (isExitingRef.current) return;
 
-      // When armed or returning to #ready, do not show modal
-      if (window.location.hash === HASH_READY) {
-        return;
+      // When the user went back from #ready to /home (hash is now empty)
+      if (window.location.hash !== HASH_READY) {
+        // Show exit confirmation modal on MAIN SCREEN!
+        setShowConfirm(true);
       }
-
-      // If already open, ignore rapid duplicate events (<300ms)
-      const now = Date.now();
-      if (showConfirmRef.current) {
-        if (now - lastBackTimeRef.current < 300) {
-          return;
-        }
-        handleConfirmExit();
-        return;
-      }
-
-      // First back press: hash was removed (from #ready to empty). Show modal on MAIN SCREEN!
-      lastBackTimeRef.current = now;
-      setShowConfirm(true);
     };
 
     window.addEventListener("popstate", handlePopState);
 
-    const onUserInteraction = () => {
-      if (isExitingRef.current || showConfirmRef.current) return;
-      if (window.location.hash !== HASH_READY) {
-        armReadyGuard();
-      }
-    };
-    window.addEventListener("touchstart", onUserInteraction, { passive: true });
-    window.addEventListener("pointerdown", onUserInteraction, { passive: true });
-
     return () => {
       window.removeEventListener("popstate", handlePopState);
-      window.removeEventListener("touchstart", onUserInteraction);
-      window.removeEventListener("pointerdown", onUserInteraction);
     };
   }, [isHome]);
 
@@ -83,7 +58,6 @@ export function ExitConfirmGuard() {
     setShowConfirm(false);
     try {
       if (window.location.hash !== HASH_READY) {
-        window.history.replaceState({ isBase: true }, "", window.location.pathname);
         window.history.pushState({ isReady: true }, "", window.location.pathname + HASH_READY);
       }
     } catch (e) {}
