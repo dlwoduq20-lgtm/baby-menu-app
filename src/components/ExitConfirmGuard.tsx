@@ -61,8 +61,19 @@ export function ExitConfirmGuard() {
 
     window.addEventListener("popstate", handlePopState);
 
+    const onUserInteraction = () => {
+      if (isExitingRef.current || showConfirmRef.current) return;
+      if (window.location.hash !== HASH_READY) {
+        armReadyGuard();
+      }
+    };
+    window.addEventListener("touchstart", onUserInteraction, { passive: true });
+    window.addEventListener("pointerdown", onUserInteraction, { passive: true });
+
     return () => {
       window.removeEventListener("popstate", handlePopState);
+      window.removeEventListener("touchstart", onUserInteraction);
+      window.removeEventListener("pointerdown", onUserInteraction);
     };
   }, [isHome]);
 
