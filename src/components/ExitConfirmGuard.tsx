@@ -1,14 +1,16 @@
 "use client";
 
-import { useEffect, useState, useRef, useCallback } from "react";
+import { useEffect, useState, useRef } from "react";
 import { usePathname } from "next/navigation";
+
+const HASH_READY = "#ready";
 
 export function ExitConfirmGuard() {
   const pathname = usePathname();
   const [showConfirm, setShowConfirm] = useState(false);
   const showConfirmRef = useRef(false);
   const isExitingRef = useRef(false);
-  const isArmedRef = useRef(false);
+  const lastBackTimeRef = useRef(0);
 
   useEffect(() => {
     showConfirmRef.current = showConfirm;
@@ -16,50 +18,44 @@ export function ExitConfirmGuard() {
 
   const isHome = !pathname || pathname === "/" || pathname === "/home" || pathname.startsWith("/home");
 
-  const armGuard = useCallback(() => {
-    if (isExitingRef.current || isArmedRef.current) return;
-    try {
-      window.history.pushState({ isExitGuard: true, timestamp: Date.now() }, "", window.location.href);
-      isArmedRef.current = true;
-    } catch (e) {}
-  }, []);
-
   useEffect(() => {
     if (!isHome) {
       setShowConfirm(false);
-      isArmedRef.current = false;
       return;
     }
 
-    // 1. Initial arm on mount
-    armGuard();
-
-    // 2. User interaction arming:
-    // Any touch, click, pointerdown, or scroll ensures genuine user activation for pushState
-    const onUserInteraction = () => {
-      if (isExitingRef.current || showConfirmRef.current) return;
-      if (!isArmedRef.current) {
-        armGuard();
-      }
+    // Arm guard with #ready fragment navigation (unaffected by Chrome History Manipulation Intervention)
+    const armReadyGuard = () => {
+      if (isExitingRef.current) return;
+      try {
+        if (window.location.hash !== HASH_READY) {
+          window.location.hash = "ready";
+        }
+      } catch (e) {}
     };
 
-    window.addEventListener("touchstart", onUserInteraction, { passive: true, capture: true });
-    window.addEventListener("pointerdown", onUserInteraction, { passive: true, capture: true });
-    window.addEventListener("click", onUserInteraction, { passive: true, capture: true });
-    window.addEventListener("scroll", onUserInteraction, { passive: true, capture: true });
+    armReadyGuard();
 
-    // 3. Popstate back button listener
-    const handlePopState = (event: PopStateEvent) => {
+    const handlePopState = () => {
       if (isExitingRef.current) return;
-      isArmedRef.current = false;
 
-      // If exit modal is already open, second back press immediately exits (Double-Back to Exit)
+      // When armed, hash is #ready. Do not open modal on arming.
+      if (window.location.hash === HASH_READY) {
+        return;
+      }
+
+      // If already open, ignore rapid duplicate events (<300ms)
+      const now = Date.now();
       if (showConfirmRef.current) {
+        if (now - lastBackTimeRef.current < 300) {
+          return;
+        }
         handleConfirmExit();
         return;
       }
 
-      // First back press: open exit confirmation modal on MAIN SCREEN
+      // First back press: hash was removed (from #ready to empty). Show modal on MAIN SCREEN!
+      lastBackTimeRef.current = now;
       setShowConfirm(true);
     };
 
@@ -67,18 +63,17 @@ export function ExitConfirmGuard() {
 
     return () => {
       window.removeEventListener("popstate", handlePopState);
-      window.removeEventListener("touchstart", onUserInteraction, { capture: true });
-      window.removeEventListener("pointerdown", onUserInteraction, { capture: true });
-      window.removeEventListener("click", onUserInteraction, { capture: true });
-      window.removeEventListener("scroll", onUserInteraction, { capture: true });
     };
-  }, [isHome, armGuard]);
+  }, [isHome]);
 
   // [취소] 버튼: 모달 닫고 가드 즉시 재적재
   function handleCancel() {
     setShowConfirm(false);
-    isArmedRef.current = false;
-    armGuard();
+    try {
+      if (window.location.hash !== HASH_READY) {
+        window.location.hash = "ready";
+      }
+    } catch (e) {}
   }
 
   // [확인/종료] 버튼: 부드러운 앱 종료
