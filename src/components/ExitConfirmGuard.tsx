@@ -24,12 +24,13 @@ export function ExitConfirmGuard() {
       return;
     }
 
-    // Arm guard with #ready fragment navigation (unaffected by Chrome History Manipulation Intervention)
+    // Arm guard with base entry + #ready fragment entry
     const armReadyGuard = () => {
       if (isExitingRef.current) return;
       try {
         if (window.location.hash !== HASH_READY) {
-          window.location.hash = "ready";
+          window.history.replaceState({ isBase: true }, "", window.location.pathname);
+          window.history.pushState({ isReady: true }, "", window.location.pathname + HASH_READY);
         }
       } catch (e) {}
     };
@@ -39,7 +40,7 @@ export function ExitConfirmGuard() {
     const handlePopState = () => {
       if (isExitingRef.current) return;
 
-      // When armed, hash is #ready. Do not open modal on arming.
+      // When armed or returning to #ready, do not show modal
       if (window.location.hash === HASH_READY) {
         return;
       }
@@ -82,7 +83,8 @@ export function ExitConfirmGuard() {
     setShowConfirm(false);
     try {
       if (window.location.hash !== HASH_READY) {
-        window.location.hash = "ready";
+        window.history.replaceState({ isBase: true }, "", window.location.pathname);
+        window.history.pushState({ isReady: true }, "", window.location.pathname + HASH_READY);
       }
     } catch (e) {}
   }
