@@ -2,7 +2,6 @@ import { Suspense } from "react";
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { RegisterServiceWorker } from "@/components/RegisterServiceWorker";
-import { ExitConfirmGuard } from "@/components/ExitConfirmGuard";
 import { CenterLoadingOverlay } from "@/components/CenterLoadingOverlay";
 
 // STEP 12: PWA 설치를 위한 manifest 연결 + iOS 홈 화면 아이콘/상태바 메타데이터
@@ -36,7 +35,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <CenterLoadingOverlay />
         </Suspense>
         <RegisterServiceWorker />
-        <ExitConfirmGuard />
         {children}
       </body>
     </html>
