@@ -8,7 +8,7 @@ export function ExitConfirmGuard() {
   const [showConfirm, setShowConfirm] = useState(false);
   const showConfirmRef = useRef(false);
   const isExitingRef = useRef(false);
-  const hasArmedRef = useRef(false);
+  const isArmedRef = useRef(false);
 
   useEffect(() => {
     showConfirmRef.current = showConfirm;
@@ -17,30 +17,30 @@ export function ExitConfirmGuard() {
   const isHome = !pathname || pathname === "/" || pathname === "/home" || pathname.startsWith("/home");
 
   const armGuard = useCallback(() => {
-    if (isExitingRef.current) return;
+    if (isExitingRef.current || isArmedRef.current) return;
     try {
-      // Chrome's History Manipulation Intervention skips pushState unless executed with a user gesture.
-      // Calling pushState directly inside user interaction handlers ensures genuine user activation.
       window.history.pushState({ isExitGuard: true, timestamp: Date.now() }, "", window.location.href);
-      hasArmedRef.current = true;
+      isArmedRef.current = true;
     } catch (e) {}
   }, []);
 
   useEffect(() => {
     if (!isHome) {
       setShowConfirm(false);
-      hasArmedRef.current = false;
+      isArmedRef.current = false;
       return;
     }
 
     // 1. Initial arm on mount
     armGuard();
 
-    // 2. Continuous gesture re-arming:
-    // Whenever user touches, clicks, or scrolls the screen, ensure a user-activated history entry exists!
+    // 2. User interaction arming:
+    // Any touch, click, pointerdown, or scroll ensures genuine user activation for pushState
     const onUserInteraction = () => {
       if (isExitingRef.current || showConfirmRef.current) return;
-      armGuard();
+      if (!isArmedRef.current) {
+        armGuard();
+      }
     };
 
     window.addEventListener("touchstart", onUserInteraction, { passive: true, capture: true });
@@ -51,6 +51,7 @@ export function ExitConfirmGuard() {
     // 3. Popstate back button listener
     const handlePopState = (event: PopStateEvent) => {
       if (isExitingRef.current) return;
+      isArmedRef.current = false;
 
       // If exit modal is already open, second back press immediately exits (Double-Back to Exit)
       if (showConfirmRef.current) {
@@ -58,7 +59,7 @@ export function ExitConfirmGuard() {
         return;
       }
 
-      // First back press: open exit confirmation modal
+      // First back press: open exit confirmation modal on MAIN SCREEN
       setShowConfirm(true);
     };
 
@@ -76,6 +77,7 @@ export function ExitConfirmGuard() {
   // [취소] 버튼: 모달 닫고 가드 즉시 재적재
   function handleCancel() {
     setShowConfirm(false);
+    isArmedRef.current = false;
     armGuard();
   }
 
