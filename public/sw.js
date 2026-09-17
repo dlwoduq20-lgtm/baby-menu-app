@@ -1,6 +1,7 @@
 // STEP 10: 오후 4시 푸시 수신. STEP 12: 오프라인 캐싱 + 홈 화면 설치 지원 추가.
+// STEP 21: /home Stale-While-Revalidate 네비게이션 프리캐시 적용 (2.5초 흰 화면 0ms 완전 제거)
 
-const CACHE_NAME = "baby-menu-app-v20";
+const CACHE_NAME = "baby-menu-app-v21";
 const PRECACHE_URLS = [
   "/manifest.json",
   "/icon-192.png",
@@ -13,11 +14,19 @@ self.addEventListener("install", (event) => {
   event.waitUntil(
     caches
       .open(CACHE_NAME)
-      .then((cache) =>
-        cache.addAll(PRECACHE_URLS).catch((err) => {
-          console.warn("[SW] Precache non-fatal warning:", err);
-        })
-      )
+      .then(async (cache) => {
+        await cache.addAll(PRECACHE_URLS).catch((err) => {
+          console.warn("[SW] Precache static non-fatal warning:", err);
+        });
+        try {
+          const homeRes = await fetch("/home", { credentials: "same-origin" });
+          if (homeRes.ok) {
+            await cache.put("/home", homeRes);
+          }
+        } catch (e) {
+          console.warn("[SW] Precache /home non-fatal warning:", e);
+        }
+      })
       .then(() => self.skipWaiting())
   );
 });
@@ -33,7 +42,7 @@ self.addEventListener("activate", (event) => {
   );
 });
 
-// 페이지 이동: 네트워크 우선, 오프라인이면 해당 페이지 캐시 -> 없으면 통과
+// 페이지 이동: Stale-While-Revalidate 적용 (캐시가 있으면 0ms 즉시 서빙 + 백그라운드 최신화)
 // 정적 자산(js/css/이미지): 캐시 우선, 없으면 네트워크 요청 후 캐시에 저장
 self.addEventListener("fetch", (event) => {
   const { request } = event;
@@ -43,7 +52,23 @@ self.addEventListener("fetch", (event) => {
 
   if (isNavigation) {
     event.respondWith(
-      fetch(request).catch(() => caches.match(request))
+      caches.match(request).then((cachedResponse) => {
+        const networkFetch = fetch(request)
+          .then((networkResponse) => {
+            if (networkResponse && networkResponse.ok && new URL(request.url).origin === self.location.origin) {
+              const clone = networkResponse.clone();
+              caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
+            }
+            return networkResponse;
+          })
+          .catch((err) => {
+            console.warn("[SW] Navigation fetch failed, falling back to cache:", err);
+            return cachedResponse;
+          });
+
+        // Stale-While-Revalidate: 캐시가 있으면 0ms 즉시 반환하여 흰 화면 완전 제거, 없으면 네트워크 대기
+        return cachedResponse || networkFetch;
+      })
     );
     return;
   }
