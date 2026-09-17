@@ -8,40 +8,34 @@ const HASH_READY = "#ready";
 export function ExitConfirmGuard() {
   const pathname = usePathname();
   const [showConfirm, setShowConfirm] = useState(false);
-  const showConfirmRef = useRef(false);
   const isExitingRef = useRef(false);
-  const hasArmedInitiallyRef = useRef(false);
-
-  useEffect(() => {
-    showConfirmRef.current = showConfirm;
-  }, [showConfirm]);
 
   const isHome = !pathname || pathname === "/" || pathname === "/home" || pathname.startsWith("/home");
 
   useEffect(() => {
     if (!isHome) {
       setShowConfirm(false);
-      hasArmedInitiallyRef.current = false;
       return;
     }
 
-    // Arm guard once on entry to home (base /home + #ready)
-    if (!hasArmedInitiallyRef.current && !isExitingRef.current) {
-      hasArmedInitiallyRef.current = true;
+    // Arm guard on home entry: DO NOT call replaceState (preserves Next.js internal router state)
+    const armGuard = () => {
+      if (isExitingRef.current) return;
       try {
-        if (window.location.hash !== HASH_READY) {
-          window.history.replaceState({ isBase: true }, "", window.location.pathname);
-          window.history.pushState({ isReady: true }, "", window.location.pathname + HASH_READY);
+        if (typeof window !== "undefined" && window.location.hash !== HASH_READY) {
+          window.history.pushState(window.history.state, "", window.location.pathname + HASH_READY);
         }
       } catch (e) {}
-    }
+    };
+
+    // Small timeout ensures Next.js hydration and router initialization are settled
+    const timer = setTimeout(armGuard, 100);
 
     const handlePopState = () => {
       if (isExitingRef.current) return;
 
       // When the user went back from #ready to /home (hash is now empty)
       if (window.location.hash !== HASH_READY) {
-        // Show exit confirmation modal on MAIN SCREEN!
         setShowConfirm(true);
       }
     };
@@ -49,26 +43,27 @@ export function ExitConfirmGuard() {
     window.addEventListener("popstate", handlePopState);
 
     return () => {
+      clearTimeout(timer);
       window.removeEventListener("popstate", handlePopState);
     };
   }, [isHome]);
 
   // [취소] 버튼: 모달 닫고 가드 즉시 재적재
-  function handleCancel() {
+  const handleCancel = () => {
     setShowConfirm(false);
     try {
-      if (window.location.hash !== HASH_READY) {
-        window.history.pushState({ isReady: true }, "", window.location.pathname + HASH_READY);
+      if (typeof window !== "undefined" && window.location.hash !== HASH_READY) {
+        window.history.pushState(window.history.state, "", window.location.pathname + HASH_READY);
       }
     } catch (e) {}
-  }
+  };
 
   // [확인/종료] 버튼: 부드러운 앱 종료
-  function handleConfirmExit() {
+  const handleConfirmExit = () => {
     isExitingRef.current = true;
     setShowConfirm(false);
 
-    // 1. Android Intent Deep Link (Native TWA LauncherActivity will call finishAffinity cleanly)
+    // Android Intent Deep Link (Native TWA LauncherActivity will call finishAffinity cleanly)
     try {
       window.location.href = "babymenu://exit";
     } catch (e) {
@@ -76,13 +71,19 @@ export function ExitConfirmGuard() {
         window.close();
       } catch (e2) {}
     }
-  }
+  };
 
   if (!showConfirm) return null;
 
   return (
-    <div className="fixed inset-0 z-[999999] flex items-center justify-center bg-black/50 px-6 backdrop-blur-sm animate-intro-fade">
-      <div className="w-full max-w-[300px] rounded-2xl bg-white p-5 text-center shadow-2xl">
+    <div 
+      className="fixed inset-0 z-[999999] flex items-center justify-center bg-black/50 px-6 backdrop-blur-sm animate-intro-fade"
+      onClick={handleCancel}
+    >
+      <div 
+        className="w-full max-w-[300px] rounded-2xl bg-white p-5 text-center shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="mx-auto mb-2.5 flex h-11 w-11 items-center justify-center rounded-full bg-peach-light/40">
           <span className="text-2xl">👋</span>
         </div>
@@ -108,4 +109,3 @@ export function ExitConfirmGuard() {
     </div>
   );
 }
-
