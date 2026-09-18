@@ -22,6 +22,8 @@ export type DailyMenuResult = {
   quickReason: string | null;
   readyToCookRecipes: ScoredRecipe[];
   almostReadyRecipes: ScoredRecipe[];
+  recentFoodGroups: string[];
+  hasRecentRecommendations: boolean;
 };
 
 function todayISO() {
@@ -183,5 +185,7 @@ export async function computeDailyMenu(supabase: SupabaseClient, userId: string)
     quickReason: aiQuick ? aiPick?.quickReason ?? null : null,
     readyToCookRecipes,
     almostReadyRecipes,
+    recentFoodGroups: Array.from(recentFoodGroups),
+    hasRecentRecommendations: (recentRows ?? []).length > 0,
   };
 }

@@ -6,6 +6,7 @@ import { AGE_STAGE_LABEL, formatBabyAge, getDetailedStageLabel } from "@/lib/bab
 import { computeDailyMenu } from "@/lib/service/dailyMenu";
 import { RecommendCard } from "@/components/RecommendCard";
 import { PantryReadySection } from "@/components/PantryReadySection";
+import { RecentFoodGroupsSection } from "@/components/RecentFoodGroupsSection";
 
 function HomeSkeleton() {
   return (
@@ -51,6 +52,8 @@ async function HomeContent() {
     quickReason,
     readyToCookRecipes,
     almostReadyRecipes,
+    recentFoodGroups,
+    hasRecentRecommendations,
   } = result;
 
   const { data: ownedRows } = await supabase
@@ -96,6 +99,12 @@ async function HomeContent() {
           </div>
           <span className="text-coral-deep">→</span>
         </Link>
+
+        {/* 최근 3일 식품군 현황 섹션 */}
+        <RecentFoodGroupsSection
+          recentFoodGroups={recentFoodGroups}
+          hasRecentRecommendations={hasRecentRecommendations}
+        />
 
         {/* [대표님 안건 100% 반영] 상단 퀵 바로가기 배너 */}
         <a
@@ -185,6 +194,32 @@ async function HomeContent() {
             재료 관리
           </Link>
         </div>
+
+        {/* [5단계] 냉장고 털기 모드 전용 링크 배너 */}
+        <Link
+          href="/pantry-clear"
+          className="mb-3 flex items-center justify-between rounded-2xl border border-[#C8EAD6] bg-[#F0F9F4] p-4 transition-all hover:bg-[#E3F4EA] shadow-xs"
+        >
+          <div className="flex items-center gap-3">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-white text-lg shadow-xs">
+              🧊
+            </span>
+            <div>
+              <div className="flex items-center gap-1.5">
+                <span className="font-display text-[14px] text-[#1E7246]">
+                  냉장고 털기 모드
+                </span>
+                <span className="rounded-pill bg-[#5FB98C] px-2 py-0.5 text-[10px] font-bold text-white">
+                  0~2개 부족
+                </span>
+              </div>
+              <div className="mt-0.5 text-[11.5px] text-ink-soft">
+                보유 재료별 0개·1개·2개 부족 요리를 한눈에 모아보기
+              </div>
+            </div>
+          </div>
+          <span className="text-[#1E7246] font-bold">→</span>
+        </Link>
 
         <Link
           href="/settings/notifications"
