@@ -10,7 +10,22 @@ export type RecipeRow = {
   allergens: string[];
   choking_hazard_note: string | null;
   caution_note: string | null;
+  menu_type?: string | null;
   image_url: string | null;
+  created_at: string;
+};
+
+export type RecipeAgeVariantRow = {
+  id: string;
+  recipe_id: string;
+  age_from_month: number;
+  age_to_month: number;
+  texture: string;
+  size_guide: string;
+  cooking_method: string | null;
+  ingredient_adjustment: string | null;
+  serving_note: string | null;
+  oil_level: string | null;
   created_at: string;
 };
 
@@ -41,6 +56,7 @@ export type NutritionDataRow = {
   fiber_g: number | null;
   key_micronutrients: string[];
   source: string; // 스펙 13장: 반드시 출처를 남긴다
+  created_at?: string;
 };
 
 // 화면/추천 로직에서 쓰기 편하도록 합쳐놓은 형태
@@ -48,4 +64,5 @@ export type RecipeWithDetails = RecipeRow & {
   ingredients: RecipeIngredientRow[];
   steps: RecipeStepRow[];
   nutrition: NutritionDataRow | null;
+  age_variants?: RecipeAgeVariantRow[];
 };

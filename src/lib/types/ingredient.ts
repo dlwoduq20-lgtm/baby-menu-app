@@ -20,6 +20,18 @@ export type Ingredient = {
   name: string;
   category: IngredientCategory;
   primary_nutrients?: string[];
+  food_groups?: string[];
+  created_at: string;
+};
+
+export type IngredientSafetyRuleRow = {
+  id: string;
+  ingredient_id: string;
+  age_from_month: number;
+  age_to_month: number | null;
+  safety_level: "SAFE" | "SAFE_AFTER_MODIFICATION" | "UNSAFE";
+  hazard_type: string | null;
+  modification_note: string | null;
   created_at: string;
 };
 
