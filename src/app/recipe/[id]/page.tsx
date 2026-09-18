@@ -45,6 +45,10 @@ export default async function RecipeDetailPage({ params }: { params: { id: strin
 
   const ageLabel = recipe.min_age_stage === "24+" ? "24개월+" : `${recipe.min_age_stage.replace("-", "~")}개월+`;
 
+  const ageVariant = (recipe.age_variants ?? []).find(
+    (v) => babyAgeMonths !== null && v.age_from_month <= babyAgeMonths && v.age_to_month >= babyAgeMonths
+  );
+
   return (
     <div className="mx-auto min-h-screen max-w-[430px] bg-cream pb-10">
       <div className="flex items-center gap-3.5 bg-cream-deep px-5 pb-5 pt-11">
@@ -93,7 +97,26 @@ export default async function RecipeDetailPage({ params }: { params: { id: strin
 
       <FeedbackBar recipeId={recipe.id} initialFavorited={Boolean(favoriteRow)} />
 
-      <div className="px-5 pt-2">
+      {baby && babyAgeMonths !== null && ageVariant && (
+        <div className="mx-5 mt-4 rounded-2xl bg-mint-pale p-4">
+          <div className="mb-1.5 text-[11.5px] font-bold text-[#2E8F5D]">
+            👶 {baby.name}이({babyAgeMonths}개월) 맞춤 조리 가이드
+          </div>
+          <div className="text-[13px] leading-relaxed text-ink">
+            <b>질감:</b> {ageVariant.texture}
+            <br />
+            <b>크기:</b> {ageVariant.size_guide}
+            {ageVariant.serving_note && (
+              <>
+                <br />
+                <b>안내:</b> {ageVariant.serving_note}
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+      <div className="px-5 pt-4">
         <h3 className="mb-2.5 font-display text-[15.5px]">재료</h3>
         <div className="flex flex-col gap-2">
           {recipe.ingredients.map((ing) => {

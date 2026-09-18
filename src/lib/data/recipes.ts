@@ -276,13 +276,22 @@ export async function fetchRecipeById(
   recipeId: string
 ): Promise<RecipeWithDetails | null> {
   try {
-    const [{ data: recipe, error: recipeError }, { data: ingredients }, { data: steps }, { data: nutrition }] =
-      await Promise.all([
-        supabase.from("recipes").select("*").eq("id", recipeId).single(),
-        supabase.from("recipe_ingredients").select("*, ingredient:ingredients(name, category, primary_nutrients)").eq("recipe_id", recipeId),
-        supabase.from("recipe_steps").select("*").eq("recipe_id", recipeId).order("step_number"),
-        supabase.from("nutrition_data").select("*").eq("recipe_id", recipeId).maybeSingle(),
-      ]);
+    const [
+      { data: recipe, error: recipeError },
+      { data: ingredients },
+      { data: steps },
+      { data: nutrition },
+      { data: variants },
+    ] = await Promise.all([
+      supabase.from("recipes").select("*").eq("id", recipeId).single(),
+      supabase
+        .from("recipe_ingredients")
+        .select("*, ingredient:ingredients(name, category, primary_nutrients, food_groups)")
+        .eq("recipe_id", recipeId),
+      supabase.from("recipe_steps").select("*").eq("recipe_id", recipeId).order("step_number"),
+      supabase.from("nutrition_data").select("*").eq("recipe_id", recipeId).maybeSingle(),
+      supabase.from("recipe_age_variants").select("*").eq("recipe_id", recipeId),
+    ]);
 
     if (recipeError || !recipe) {
       const fallback = DEFAULT_RECIPES.find((r) => r.id === recipeId || r.name === recipeId);
@@ -294,6 +303,7 @@ export async function fetchRecipeById(
       ingredients: ingredients ?? [],
       steps: steps ?? [],
       nutrition: nutrition ?? null,
+      age_variants: variants ?? [],
     };
   } catch {
     const fallback = DEFAULT_RECIPES.find((r) => r.id === recipeId || r.name === recipeId);
@@ -303,13 +313,21 @@ export async function fetchRecipeById(
 
 export async function fetchAllRecipesWithDetails(supabase: SupabaseClient): Promise<RecipeWithDetails[]> {
   try {
-    const [{ data: recipes, error: recipesError }, { data: ingredients }, { data: steps }, { data: nutrition }] =
-      await Promise.all([
-        supabase.from("recipes").select("*"),
-        supabase.from("recipe_ingredients").select("*, ingredient:ingredients(name, category, primary_nutrients)"),
-        supabase.from("recipe_steps").select("*").order("step_number"),
-        supabase.from("nutrition_data").select("*"),
-      ]);
+    const [
+      { data: recipes, error: recipesError },
+      { data: ingredients },
+      { data: steps },
+      { data: nutrition },
+      { data: variants },
+    ] = await Promise.all([
+      supabase.from("recipes").select("*"),
+      supabase
+        .from("recipe_ingredients")
+        .select("*, ingredient:ingredients(name, category, primary_nutrients, food_groups)"),
+      supabase.from("recipe_steps").select("*").order("step_number"),
+      supabase.from("nutrition_data").select("*"),
+      supabase.from("recipe_age_variants").select("*"),
+    ]);
 
     if (recipesError || !recipes || recipes.length === 0) {
       return DEFAULT_RECIPES;
@@ -320,6 +338,7 @@ export async function fetchAllRecipesWithDetails(supabase: SupabaseClient): Prom
       ingredients: (ingredients ?? []).filter((i) => i.recipe_id === recipe.id),
       steps: (steps ?? []).filter((s) => s.recipe_id === recipe.id),
       nutrition: (nutrition ?? []).find((n) => n.recipe_id === recipe.id) ?? null,
+      age_variants: (variants ?? []).filter((v) => v.recipe_id === recipe.id),
     }));
   } catch {
     return DEFAULT_RECIPES;
