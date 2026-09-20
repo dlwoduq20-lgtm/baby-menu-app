@@ -33,6 +33,7 @@ async function PantryClearContent() {
     .from("babies")
     .select("id, name, birth_date")
     .eq("user_id", user.id)
+    .order("created_at", { ascending: false })
     .limit(1);
   const baby = babies?.[0];
   if (!baby) redirect("/onboarding/baby");

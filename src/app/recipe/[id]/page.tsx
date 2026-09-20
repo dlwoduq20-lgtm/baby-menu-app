@@ -31,7 +31,12 @@ export default async function RecipeDetailPage({ params }: { params: { id: strin
     .eq("recipe_id", recipe.id)
     .maybeSingle();
 
-  const { data: babies } = await supabase.from("babies").select("*").eq("user_id", user.id).limit(1);
+  const { data: babies } = await supabase
+    .from("babies")
+    .select("*")
+    .eq("user_id", user.id)
+    .order("created_at", { ascending: false })
+    .limit(1);
   const baby = babies?.[0];
   const babyAgeMonths = baby ? calcAgeInMonths(baby.birth_date) : null;
   const babyStage = baby ? getAgeStage(babyAgeMonths!) : null;

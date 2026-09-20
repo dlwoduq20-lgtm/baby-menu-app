@@ -59,7 +59,12 @@ function toISODate(d: Date) {
  * 없으면 새로 생성해서 저장한다. AI 개별 호출 없이 결정론적 스코어링만 사용한다 (한 번에 14개 슬롯을 채우는 배치 작업).
  */
 export async function computeWeeklyPlan(supabase: SupabaseClient, userId: string): Promise<WeeklyPlanResult | null> {
-  const { data: babies } = await supabase.from("babies").select("*").eq("user_id", userId).limit(1);
+  const { data: babies } = await supabase
+    .from("babies")
+    .select("*")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false })
+    .limit(1);
   const baby = babies?.[0];
   if (!baby) return null;
 

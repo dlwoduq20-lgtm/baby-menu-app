@@ -12,7 +12,12 @@ export default async function MyPage() {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const { data: babies } = await supabase.from("babies").select("*").eq("user_id", user.id).limit(1);
+  const { data: babies } = await supabase
+    .from("babies")
+    .select("*")
+    .eq("user_id", user.id)
+    .order("created_at", { ascending: false })
+    .limit(1);
   const baby = babies?.[0];
 
   return (
@@ -31,7 +36,7 @@ export default async function MyPage() {
       </div>
 
       <div className="mb-4 flex flex-col gap-2.5">
-        <Link href="/onboarding/baby" className="rounded-2xl border border-line bg-white p-4 text-[13.5px]">
+        <Link href="/onboarding/baby?mode=edit" className="rounded-2xl border border-line bg-white p-4 text-[13.5px]">
           👶 아기 프로필 수정
         </Link>
         <Link href="/ingredients" className="rounded-2xl border border-line bg-white p-4 text-[13.5px]">

@@ -14,7 +14,12 @@ export default async function Root() {
   }
 
   // 로그인은 됐지만 아기 프로필이 아직 없다면 온보딩으로 보낸다 (스펙 4장 최초 가입 플로우).
-  const { data: babies } = await supabase.from("babies").select("id").eq("user_id", session.user.id).limit(1);
+  const { data: babies } = await supabase
+    .from("babies")
+    .select("id")
+    .eq("user_id", session.user.id)
+    .order("created_at", { ascending: false })
+    .limit(1);
 
   if (!babies || babies.length === 0) {
     redirect("/onboarding/baby");

@@ -1,19 +1,58 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useEffect, useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { calcAgeInMonths, formatBabyAge, getDetailedStageLabel } from "@/lib/babyAge";
 
-export default function BabyProfilePage() {
+function BabyProfileForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const supabase = createClient();
+
+  const [existingBabyId, setExistingBabyId] = useState<string | null>(null);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const [name, setName] = useState("");
   const [birthDate, setBirthDate] = useState("");
   const [gender, setGender] = useState<"female" | "male" | "unspecified">("unspecified");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function load() {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) {
+        setLoading(false);
+        return;
+      }
+
+      const modeParam = searchParams.get("mode");
+      const { data: babies } = await supabase
+        .from("babies")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false })
+        .limit(1);
+
+      if (babies && babies.length > 0) {
+        const baby = babies[0];
+        setExistingBabyId(baby.id);
+        setName(baby.name);
+        setBirthDate(baby.birth_date);
+        setGender((baby.gender as any) ?? "unspecified");
+        if (modeParam === "edit" || babies.length > 0) {
+          setIsEditMode(true);
+        }
+      }
+      setLoading(false);
+    }
+    load();
+  }, [supabase, searchParams]);
 
   const agePreview = useMemo(() => {
     if (!birthDate) return null;
@@ -45,6 +84,30 @@ export default function BabyProfilePage() {
       return;
     }
 
+    if (isEditMode && existingBabyId) {
+      // 기존 아기 정보 업데이트
+      const { error: updateError } = await supabase
+        .from("babies")
+        .update({
+          name: name.trim(),
+          birth_date: birthDate,
+          gender,
+        })
+        .eq("id", existingBabyId);
+
+      setSubmitting(false);
+
+      if (updateError) {
+        setError(`저장 중 문제가 발생했어요: ${updateError.message}`);
+        return;
+      }
+
+      router.push("/mypage");
+      router.refresh();
+      return;
+    }
+
+    // 신규 온보딩 등록
     const { data, error: insertError } = await supabase
       .from("babies")
       .insert({ user_id: user.id, name: name.trim(), birth_date: birthDate, gender })
@@ -61,22 +124,42 @@ export default function BabyProfilePage() {
     router.push(`/onboarding/allergy?babyId=${data.id}`);
   }
 
+  if (loading) {
+    return (
+      <div className="mx-auto min-h-screen max-w-[430px] bg-cream px-6 pb-10 pt-11">
+        <div className="py-20 text-center text-sm text-ink-soft">불러오는 중...</div>
+      </div>
+    );
+  }
+
   return (
     <div className="mx-auto min-h-screen max-w-[430px] bg-cream px-6 pb-10 pt-11">
+      {/* 상단 네비게이션 / 스텝 인디케이터 */}
       <div className="mb-6 flex items-center justify-between">
-        <div className="flex gap-1.5">
-          <span className="h-1.5 w-1.5 rounded-full bg-coral" />
-          <span className="h-1.5 w-1.5 rounded-full bg-line" />
-          <span className="h-1.5 w-1.5 rounded-full bg-line" />
-        </div>
+        {isEditMode ? (
+          <Link
+            href="/mypage"
+            className="flex h-[36px] w-[36px] items-center justify-center rounded-full bg-white text-sm shadow-sm transition-transform active:scale-95"
+          >
+            ←
+          </Link>
+        ) : (
+          <div className="flex gap-1.5">
+            <span className="h-1.5 w-1.5 rounded-full bg-coral" />
+            <span className="h-1.5 w-1.5 rounded-full bg-line" />
+            <span className="h-1.5 w-1.5 rounded-full bg-line" />
+          </div>
+        )}
       </div>
 
       <h1 className="mb-1.5 font-display text-xl leading-snug">
-        우리 아기를
-        <br />
-        소개해 주세요
+        {isEditMode ? "아기 프로필 수정" : <>우리 아기를<br />소개해 주세요</>}
       </h1>
-      <p className="mb-6 text-[13.5px] text-ink-soft">월령에 딱 맞는 메뉴만 추천해 드릴게요.</p>
+      <p className="mb-6 text-[13.5px] text-ink-soft">
+        {isEditMode
+          ? "아기 정보를 수정하면 맞춤 식단 및 추천 기준이 새로 갱신돼요."
+          : "월령에 딱 맞는 메뉴만 추천해 드릴게요."}
+      </p>
 
       <form onSubmit={handleSubmit}>
         <div className="mb-4">
@@ -133,11 +216,25 @@ export default function BabyProfilePage() {
         <button
           type="submit"
           disabled={submitting}
-          className="mt-4 w-full rounded-pill bg-ink py-3.5 text-[15px] font-bold text-white disabled:opacity-60"
+          className="mt-4 w-full rounded-pill bg-ink py-3.5 text-[15px] font-bold text-white disabled:opacity-60 transition-transform active:scale-[0.99]"
         >
-          {submitting ? "저장 중..." : "다음"}
+          {submitting ? "저장 중..." : isEditMode ? "수정 완료" : "다음"}
         </button>
       </form>
     </div>
+  );
+}
+
+export default function BabyProfilePage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="mx-auto min-h-screen max-w-[430px] bg-cream px-6 pb-10 pt-11">
+          <div className="py-20 text-center text-sm text-ink-soft">불러오는 중...</div>
+        </div>
+      }
+    >
+      <BabyProfileForm />
+    </Suspense>
   );
 }

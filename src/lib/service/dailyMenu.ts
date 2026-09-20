@@ -37,7 +37,12 @@ function todayISO() {
  * 두 곳에서 동일한 로직을 그대로 재사용한다.
  */
 export async function computeDailyMenu(supabase: SupabaseClient, userId: string): Promise<DailyMenuResult | null> {
-  const { data: babies } = await supabase.from("babies").select("*").eq("user_id", userId).limit(1);
+  const { data: babies } = await supabase
+    .from("babies")
+    .select("*")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false })
+    .limit(1);
   const baby = babies?.[0];
   if (!baby) return null;
 

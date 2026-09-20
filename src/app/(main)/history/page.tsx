@@ -11,7 +11,12 @@ export default async function HistoryPage() {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const { data: babies } = await supabase.from("babies").select("id").eq("user_id", user.id).limit(1);
+  const { data: babies } = await supabase
+    .from("babies")
+    .select("id")
+    .eq("user_id", user.id)
+    .order("created_at", { ascending: false })
+    .limit(1);
   const baby = babies?.[0];
 
   const [{ data: recommendations }, { data: feedback }] = await Promise.all([
