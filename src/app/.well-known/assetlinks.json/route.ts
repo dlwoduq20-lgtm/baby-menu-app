@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 
-export const dynamic = 'force-static';
+export const dynamic = 'force-dynamic';
 
 export async function GET() {
   const assetlinks = [
@@ -10,15 +10,17 @@ export async function GET() {
         namespace: 'android_app',
         package_name: 'com.jy.babymenu',
         sha256_cert_fingerprints: [
-          '21:42:3A:81:C3:C9:CE:34:75:DC:A1:1C:3E:D5:4C:05:40:BF:E0:BA:49:A4:60:39:35:09:C0:7B:2F:14:9C:B6'
-        ]
-      }
-    }
+          '21:42:3A:81:C3:C9:CE:34:75:DC:A1:1C:3E:D5:4C:05:40:BF:E0:BA:49:A4:60:39:35:09:C0:7B:2F:14:9C:B6',
+          '52:4B:24:5A:7F:98:EC:36:9E:A2:6A:65:FF:83:D1:04:BB:07:EF:6D:B4:2A:6A:CC:00:83:87:EB:C5:98:CB:89',
+        ],
+      },
+    },
   ];
 
   return NextResponse.json(assetlinks, {
     headers: {
       'Content-Type': 'application/json',
+      'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
     },
   });
 }
