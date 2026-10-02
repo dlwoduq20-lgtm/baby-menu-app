@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import { isTwaEnvironment } from "@/lib/twa";
 
 function urlBase64ToUint8Array(base64String: string) {
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
@@ -18,10 +19,35 @@ export default function NotificationSettingsPage() {
   const [status, setStatus] = useState<"idle" | "loading" | "saved" | "error">("idle");
   const [message, setMessage] = useState<string | null>(null);
   const [permState, setPermState] = useState<string>("checking");
+  const [isTwa, setIsTwa] = useState<boolean>(true);
 
   useEffect(() => {
-    if (typeof window !== "undefined" && "Notification" in window) {
-      setPermState(Notification.permission);
+    if (typeof window !== "undefined") {
+      const twa = isTwaEnvironment();
+      setIsTwa(twa);
+
+      if ("Notification" in window) {
+        setPermState(Notification.permission);
+      }
+
+      // 일반 브라우저(PC/모바일 웹)에서 접속한 경우 기존에 남아있는 푸시 구독 자동 해제 및 정리
+      if (!twa && "serviceWorker" in navigator) {
+        navigator.serviceWorker.ready.then(async (reg) => {
+          try {
+            const sub = await reg.pushManager.getSubscription();
+            if (sub) {
+              await sub.unsubscribe();
+              await fetch("/api/push/subscribe", {
+                method: "DELETE",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ endpoint: sub.endpoint }),
+              });
+            }
+          } catch (e) {
+            console.warn("Non-TWA cleanup error:", e);
+          }
+        }).catch(() => {});
+      }
     }
   }, []);
 
@@ -45,6 +71,10 @@ export default function NotificationSettingsPage() {
   }, [supabase]);
 
   async function registerSubscription() {
+    if (!isTwa) {
+      throw new Error("알림은 설치된 앱(TWA)에서만 등록할 수 있어요. 스마트폰에 설치된 앱을 실행해 주세요.");
+    }
+
     if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
       throw new Error("이 기기 브라우저는 푸시 알림을 지원하지 않아요.");
     }
@@ -79,7 +109,7 @@ export default function NotificationSettingsPage() {
     const res = await fetch("/api/push/subscribe", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ subscription, enabled: true, notifyTime }),
+      body: JSON.stringify({ subscription, enabled: true, notifyTime, isTwa: true }),
     });
 
     if (!res.ok) {
@@ -123,7 +153,7 @@ export default function NotificationSettingsPage() {
     const res = await fetch("/api/push/subscribe", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ enabled: false, notifyTime }),
+      body: JSON.stringify({ enabled: false, notifyTime, isTwa }),
     });
 
     setStatus(res.ok ? "saved" : "error");
@@ -133,15 +163,21 @@ export default function NotificationSettingsPage() {
 
   async function handleTimeChange(newTime: string) {
     setNotifyTime(newTime);
-    if (!enabled) return; // 알림이 꺼져있으면 시간만 로컬에 반영, 켤 때 같이 저장됨
+    if (!enabled || !isTwa) return;
     await fetch("/api/push/subscribe", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ enabled: true, notifyTime: newTime }),
+      body: JSON.stringify({ enabled: true, notifyTime: newTime, isTwa: true }),
     });
   }
 
   async function handleTestPush() {
+    if (!isTwa) {
+      setStatus("error");
+      setMessage("테스트 알림은 설치된 앱(TWA)에서만 발송할 수 있어요.");
+      return;
+    }
+
     setStatus("loading");
     setMessage("테스트 알림 발송 중...");
 
@@ -194,14 +230,29 @@ export default function NotificationSettingsPage() {
         <h1 className="font-display text-lg">알림 설정</h1>
       </div>
 
-      {permState === "denied" && (
+      {!isTwa && (
+        <div className="mb-5 rounded-2xl border border-coral/30 bg-white p-4 shadow-sm">
+          <div className="flex items-start gap-3">
+            <span className="text-2xl">📱</span>
+            <div>
+              <div className="font-display text-[14.5px] text-ink font-bold">알림은 설치된 앱에서만 받을 수 있어요</div>
+              <p className="mt-1 text-xs text-ink-soft leading-relaxed">
+                PC나 모바일 웹 브라우저로는 불필요한 알림이 오지 않도록 안전하게 제한되어 있습니다.
+                스마트폰에 설치된 <strong>[오늘 뭐 먹이지]</strong> 앱을 실행하시면 알림을 켜고 매일 저녁 메뉴를 받아보실 수 있습니다.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {isTwa && permState === "denied" && (
         <div className="mb-4 rounded-2xl border border-coral/30 bg-coral/10 p-3.5 text-xs text-coral-deep leading-relaxed">
           <div className="font-bold text-[13px] mb-1">⚠️ 기기 알림이 차단되어 있습니다</div>
           스마트폰 <strong>[설정] &gt; [애플리케이션] &gt; [오늘 뭐 먹이지] &gt; [알림]</strong>에서 알림 허용을 켜주셔야 상단 바에 알림이 표시됩니다.
         </div>
       )}
 
-      {permState === "granted" && (
+      {isTwa && permState === "granted" && (
         <div className="mb-4 rounded-2xl border border-[#2E8F5D]/20 bg-[#2E8F5D]/5 px-4 py-2.5 text-xs text-[#2E8F5D] flex items-center justify-between">
           <span>스마트폰 알림 권한</span>
           <span className="font-bold">허용됨 ✅</span>
@@ -211,17 +262,25 @@ export default function NotificationSettingsPage() {
       <div className="mb-4 flex items-center justify-between rounded-2xl border border-line bg-white p-4">
         <div>
           <div className="font-display text-[15px]">오후 저녁 메뉴 알림</div>
-          <div className="mt-0.5 text-xs text-ink-soft">매일 설정한 시간에 오늘의 메뉴를 알려드려요.</div>
+          <div className="mt-0.5 text-xs text-ink-soft">
+            {isTwa ? "매일 설정한 시간에 오늘의 메뉴를 알려드려요." : "설치된 앱에서만 작동합니다."}
+          </div>
         </div>
-        <button
-          onClick={enabled ? handleDisable : handleEnable}
-          disabled={status === "loading"}
-          className={`rounded-pill px-4 py-2 text-[13px] font-bold ${
-            enabled ? "bg-mint-pale text-[#2E8F5D]" : "bg-ink text-white"
-          }`}
-        >
-          {enabled ? "켜짐" : "꺼짐 · 켜기"}
-        </button>
+        {isTwa ? (
+          <button
+            onClick={enabled ? handleDisable : handleEnable}
+            disabled={status === "loading"}
+            className={`rounded-pill px-4 py-2 text-[13px] font-bold ${
+              enabled ? "bg-mint-pale text-[#2E8F5D]" : "bg-ink text-white"
+            }`}
+          >
+            {enabled ? "켜짐" : "꺼짐 · 켜기"}
+          </button>
+        ) : (
+          <span className="rounded-pill bg-line/70 px-3 py-1.5 text-xs font-bold text-ink-soft">
+            앱 전용
+          </span>
+        )}
       </div>
 
       <div className="mb-2 text-[13px] font-bold text-ink-soft">알림 시간</div>
@@ -229,7 +288,10 @@ export default function NotificationSettingsPage() {
         type="time"
         value={notifyTime}
         onChange={(e) => handleTimeChange(e.target.value)}
-        className="mb-4 w-full rounded-2xl border border-line bg-white px-3.5 py-3 text-[14.5px]"
+        disabled={!isTwa}
+        className={`mb-4 w-full rounded-2xl border border-line px-3.5 py-3 text-[14.5px] ${
+          isTwa ? "bg-white" : "bg-line/20 text-ink-soft cursor-not-allowed"
+        }`}
       />
 
       <div className="mb-4 rounded-2xl border border-line bg-white p-4">
@@ -240,9 +302,9 @@ export default function NotificationSettingsPage() {
           </div>
           <button
             onClick={handleTestPush}
-            disabled={status === "loading" || !enabled}
+            disabled={status === "loading" || !enabled || !isTwa}
             className={`rounded-pill px-4 py-2 text-[13px] font-bold ${
-              enabled ? "bg-coral text-white" : "bg-line text-ink-soft cursor-not-allowed"
+              isTwa && enabled ? "bg-coral text-white" : "bg-line text-ink-soft cursor-not-allowed"
             }`}
           >
             지금 받기
