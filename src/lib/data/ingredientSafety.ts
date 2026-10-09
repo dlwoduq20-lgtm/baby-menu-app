@@ -33,3 +33,30 @@ export async function fetchIngredientSafetyRules(
     return [];
   }
 }
+
+export async function fetchSafetyRulesForIngredients(
+  supabase: SupabaseClient,
+  ingredientIds: string[]
+): Promise<IngredientSafetyRule[]> {
+  if (!ingredientIds || ingredientIds.length === 0) return [];
+  try {
+    const { data, error } = await supabase
+      .from("ingredient_safety_rules")
+      .select("ingredient_id, age_from_month, age_to_month, safety_level, hazard_type, modification_note, ingredient:ingredients(name)")
+      .in("ingredient_id", ingredientIds);
+
+    if (error || !data) return [];
+
+    return (data as any[]).map((r) => ({
+      ingredientId: r.ingredient_id,
+      ingredientName: r.ingredient?.name ?? "",
+      ageFromMonth: r.age_from_month,
+      ageToMonth: r.age_to_month,
+      safetyLevel: r.safety_level,
+      hazardType: r.hazard_type,
+      modificationNote: r.modification_note,
+    }));
+  } catch {
+    return [];
+  }
+}

@@ -5,6 +5,8 @@ import { fetchRecipeById } from "@/lib/data/recipes";
 import { fetchNutritionTargets, findTargetForStage, coveragePercent } from "@/lib/data/nutritionTargets";
 import { calcAgeInMonths, getAgeStage } from "@/lib/babyAge";
 import { FeedbackBar } from "@/components/FeedbackBar";
+import { fetchSafetyRulesForIngredients } from "@/lib/data/ingredientSafety";
+
 
 export default async function RecipeDetailPage({ params }: { params: { id: string } }) {
   const supabase = createClient();
@@ -53,6 +55,37 @@ export default async function RecipeDetailPage({ params }: { params: { id: strin
   const ageVariant = (recipe.age_variants ?? []).find(
     (v) => babyAgeMonths !== null && v.age_from_month <= babyAgeMonths && v.age_to_month >= babyAgeMonths
   );
+
+  // 식재료 안전 규칙 조회 (N+1 방지: in 쿼리로 한 번에 조회)
+  const ingredientIds = recipe.ingredients
+    .map((i) => i.ingredient_id)
+    .filter(Boolean);
+
+  const rawSafetyRules =
+    babyAgeMonths !== null && ingredientIds.length > 0
+      ? await fetchSafetyRulesForIngredients(supabase, ingredientIds)
+      : [];
+
+  const ingredientNameMap = new Map(
+    recipe.ingredients.map((i) => [i.ingredient_id, i.ingredient?.name])
+  );
+
+  // 아기 월령 조건 매칭 (age_from_month <= babyAgeMonths && (age_to_month === null || age_to_month >= babyAgeMonths))
+  const applicableRules = rawSafetyRules
+    .filter((rule) => {
+      if (babyAgeMonths === null) return false;
+      if (rule.ageFromMonth > babyAgeMonths) return false;
+      if (rule.ageToMonth !== null && rule.ageToMonth < babyAgeMonths) return false;
+      return true;
+    })
+    .map((rule) => ({
+      ...rule,
+      ingredientName: rule.ingredientName || ingredientNameMap.get(rule.ingredientId) || "재료",
+    }));
+
+  const unsafeRules = applicableRules.filter((r) => r.safetyLevel === "UNSAFE");
+  const modificationRules = applicableRules.filter((r) => r.safetyLevel === "SAFE_AFTER_MODIFICATION");
+
 
   return (
     <div className="mx-auto min-h-screen max-w-[430px] bg-cream pb-10">
@@ -120,6 +153,52 @@ export default async function RecipeDetailPage({ params }: { params: { id: strin
           </div>
         </div>
       )}
+
+      {baby && babyAgeMonths !== null && unsafeRules.length > 0 && (
+        <div className="mx-5 mt-3 rounded-2xl border border-red-200 bg-[#FFF5F5] p-4 text-red-900">
+          <div className="mb-2 flex items-center gap-1.5 text-[12px] font-bold text-red-700">
+            <span>🚫</span>
+            <span>이 월령에는 권장하지 않는 재료가 있어요</span>
+          </div>
+          <div className="flex flex-col gap-1.5 text-[12.5px] leading-relaxed text-red-800">
+            {unsafeRules.map((rule, idx) => (
+              <div key={idx} className="flex items-start gap-1.5">
+                <span className="shrink-0">•</span>
+                <div>
+                  <b className="font-semibold text-red-900">{rule.ingredientName}:</b>{" "}
+                  {rule.modificationNote || "현재 월령에는 섭취를 권장하지 않아요."}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {baby && babyAgeMonths !== null && modificationRules.length > 0 && (
+        <div className="mx-5 mt-3 rounded-2xl border border-[#F4DFAE] bg-yellow-pale p-4">
+          <div className="mb-2 flex items-center gap-1.5 text-[12px] font-bold text-[#8A5E12]">
+            <span>⚠️</span>
+            <span>{baby.name}이({babyAgeMonths}개월) 조리 시 주의</span>
+          </div>
+          <div className="flex flex-col gap-2 text-[12.5px] leading-relaxed text-[#7A5A16]">
+            {modificationRules.map((rule, idx) => {
+              const isAllergen = rule.hazardType === "allergen";
+              return (
+                <div key={idx} className="flex items-start gap-1.5">
+                  <span className="shrink-0">{isAllergen ? "🥜" : "⚠️"}</span>
+                  <div>
+                    <span className="font-bold text-[#66460B]">
+                      {isAllergen ? "알레르기 주의" : "조리 시 주의"} — {rule.ingredientName}:
+                    </span>{" "}
+                    {rule.modificationNote}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
 
       <div className="px-5 pt-4">
         <h3 className="mb-2.5 font-display text-[15.5px]">재료</h3>
