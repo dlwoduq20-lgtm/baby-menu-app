@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { AGE_STAGE_LABEL, formatBabyAge, getDetailedStageLabel } from "@/lib/babyAge";
+import { AGE_STAGE_LABEL, formatBabyAge, getDetailedStageLabel, getRecipeBadgeLabel } from "@/lib/babyAge";
 import { computeDailyMenu } from "@/lib/service/dailyMenu";
 import { RecommendCard } from "@/components/RecommendCard";
 import { PantryReadySection } from "@/components/PantryReadySection";
@@ -76,7 +76,7 @@ async function HomeContent() {
       <div className="relative overflow-hidden bg-gradient-to-b from-cream-deep to-cream px-[22px] pb-[26px] pt-11">
         <span className="mb-4 inline-flex items-center gap-2 rounded-pill bg-white px-3.5 py-1.5 pr-3.5 text-[13px] text-ink-soft shadow-sm">
           <span className="flex h-7 w-7 items-center justify-center rounded-full bg-coral-pale text-sm">🐣</span>
-          {baby.name}아 · 현재 {formatBabyAge(ageMonths)} ({getDetailedStageLabel(ageMonths)})
+          {baby.name} · 현재 {formatBabyAge(ageMonths)} ({getDetailedStageLabel(ageMonths)})
         </span>
         <h1 className="font-display text-[26px] leading-snug">
           오늘 저녁,
@@ -94,7 +94,7 @@ async function HomeContent() {
           <div>
             <div className="font-display text-[14.5px] text-coral-deep">🗓️ 이번 주 식단 & 장보기 리스트</div>
             <div className="mt-0.5 text-[11.5px] text-ink-soft">
-              {baby.name}이 영양 커버리지와 장보기 리스트를 한번에 확인해보세요
+              {baby.name} 맞춤 영양 커버리지와 장보기 리스트를 한번에 확인해보세요
             </div>
           </div>
           <span className="text-coral-deep">→</span>
@@ -146,7 +146,7 @@ async function HomeContent() {
               <RecommendCard
                 recipe={main}
                 totalRequired={main.requiredIngredients.length}
-                badgeLabel={`${main.minAgeStage.replace("-", "~")}개월 · 유아식`}
+                badgeLabel={getRecipeBadgeLabel(main, ageMonths)}
                 reason={mainReason}
               />
             ) : (
@@ -162,7 +162,7 @@ async function HomeContent() {
               <RecommendCard
                 recipe={quick}
                 totalRequired={quick.requiredIngredients.length}
-                badgeLabel="초간편"
+                badgeLabel={`초간편 · ${getRecipeBadgeLabel(quick, ageMonths)}`}
                 quick
                 reason={quickReason}
               />

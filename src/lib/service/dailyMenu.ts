@@ -71,11 +71,14 @@ export async function computeDailyMenu(supabase: SupabaseClient, userId: string)
     fetchAllRecipesWithDetails(supabase),
     fetchAgeRules(supabase),
     fetchIngredientSafetyRules(supabase),
-    supabase
-      .from("recipe_age_variants")
-      .select("recipe_id")
-      .lte("age_from_month", ageMonths)
-      .gte("age_to_month", ageMonths),
+    ageMonths >= 24
+      ? supabase.from("recipe_age_variants").select("recipe_id").gte("age_to_month", 24)
+      : supabase
+          .from("recipe_age_variants")
+          .select("recipe_id")
+          .lte("age_from_month", ageMonths)
+          .gte("age_to_month", ageMonths),
+
     // 스펙 8장: 최근 추천된 메뉴는 우선순위를 낮춘다
     supabase
       .from("recommendations")

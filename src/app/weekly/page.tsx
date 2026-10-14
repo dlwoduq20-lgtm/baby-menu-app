@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { computeWeeklyPlan, DAY_LABELS } from "@/lib/service/weeklyPlan";
+import { formatBabyAge, getDetailedStageLabel } from "@/lib/babyAge";
 import { WeeklyCalendarView, CalendarDay } from "@/components/WeeklyCalendarView";
 
 function CoverageBar({ label, percent }: { label: string; percent: number | null }) {
@@ -55,7 +56,7 @@ export default async function WeeklyPlanPage() {
         </Link>
         <div>
           <h1 className="font-display text-lg">이번 주 식단</h1>
-          <div className="text-[11px] text-ink-soft">{weekLabel} 주 · {plan.baby.name}이 · {plan.ageMonths}개월</div>
+          <div className="text-[11px] text-ink-soft">{weekLabel} 주 · {plan.baby.name} · {formatBabyAge(plan.ageMonths)} ({getDetailedStageLabel(plan.ageMonths)})</div>
         </div>
       </div>
 

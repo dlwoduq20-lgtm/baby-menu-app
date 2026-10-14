@@ -115,7 +115,7 @@ export async function computeWeeklyPlan(supabase: SupabaseClient, userId: string
 
   if (dayRecipeIds.length === 0) {
     const engineRecipes = recipes.map(toEngineRecipe);
-    const babyForEngine = { ageStage, allergies: (allergyRows ?? []).map((r) => r.allergen), dislikedFoods: [] };
+    const babyForEngine = { ageStage, ageMonths, allergies: (allergyRows ?? []).map((r) => r.allergen), dislikedFoods: [] };
     const usedThisWeek = new Set<string>();
     dayRecipeIds = [];
 

@@ -3,7 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { fetchRecipeById } from "@/lib/data/recipes";
 import { fetchNutritionTargets, findTargetForStage, coveragePercent } from "@/lib/data/nutritionTargets";
-import { calcAgeInMonths, getAgeStage } from "@/lib/babyAge";
+import { calcAgeInMonths, getAgeStage, formatBabyAge } from "@/lib/babyAge";
 import { FeedbackBar } from "@/components/FeedbackBar";
 import { fetchSafetyRulesForIngredients } from "@/lib/data/ingredientSafety";
 
@@ -50,11 +50,26 @@ export default async function RecipeDetailPage({ params }: { params: { id: strin
     new Set(recipe.ingredients.flatMap((i) => i.ingredient?.primary_nutrients ?? []))
   );
 
-  const ageLabel = recipe.min_age_stage === "24+" ? "24개월+" : `${recipe.min_age_stage.replace("-", "~")}개월+`;
+  const ageLabel =
+    recipe.min_age_stage === "24+"
+      ? "24개월 이상 (어린이)"
+      : `${recipe.min_age_stage.replace("-", "~")}개월 이상`;
 
-  const ageVariant = (recipe.age_variants ?? []).find(
-    (v) => babyAgeMonths !== null && v.age_from_month <= babyAgeMonths && v.age_to_month >= babyAgeMonths
+  // 월령 변형 가이드: 정확한 월령 구간 매칭 or 24개월 이상 어린이는 해당 레시피의 최상위 가이드 활용
+  const matchedVariant = (recipe.age_variants ?? []).find(
+    (v) =>
+      babyAgeMonths !== null &&
+      v.age_from_month <= babyAgeMonths &&
+      (v.age_to_month === null || v.age_to_month >= babyAgeMonths)
   );
+
+  const fallbackVariant =
+    babyAgeMonths !== null && babyAgeMonths >= 24 && (recipe.age_variants ?? []).length > 0
+      ? [...(recipe.age_variants ?? [])].sort((a, b) => (b.age_to_month ?? 999) - (a.age_to_month ?? 999))[0]
+      : undefined;
+
+  const ageVariant = matchedVariant ?? fallbackVariant;
+
 
   // 식재료 안전 규칙 조회 (N+1 방지: in 쿼리로 한 번에 조회)
   const ingredientIds = recipe.ingredients
@@ -138,7 +153,7 @@ export default async function RecipeDetailPage({ params }: { params: { id: strin
       {baby && babyAgeMonths !== null && ageVariant && (
         <div className="mx-5 mt-4 rounded-2xl bg-mint-pale p-4">
           <div className="mb-1.5 text-[11.5px] font-bold text-[#2E8F5D]">
-            👶 {baby.name}이({babyAgeMonths}개월) 맞춤 조리 가이드
+            👶 {baby.name} ({formatBabyAge(babyAgeMonths)}) 맞춤 조리 가이드
           </div>
           <div className="text-[13px] leading-relaxed text-ink">
             <b>질감:</b> {ageVariant.texture}
@@ -178,7 +193,7 @@ export default async function RecipeDetailPage({ params }: { params: { id: strin
         <div className="mx-5 mt-3 rounded-2xl border border-[#F4DFAE] bg-yellow-pale p-4">
           <div className="mb-2 flex items-center gap-1.5 text-[12px] font-bold text-[#8A5E12]">
             <span>⚠️</span>
-            <span>{baby.name}이({babyAgeMonths}개월) 조리 시 주의</span>
+            <span>{baby.name} ({formatBabyAge(babyAgeMonths)}) 조리 시 주의</span>
           </div>
           <div className="flex flex-col gap-2 text-[12.5px] leading-relaxed text-[#7A5A16]">
             {modificationRules.map((rule, idx) => {

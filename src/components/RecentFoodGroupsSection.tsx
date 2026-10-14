@@ -27,6 +27,15 @@ const FOOD_GROUP_EMOJIS: Record<string, string> = {
   곡류: "🌾",
 };
 
+function getSubjectParticle(word: string): string {
+  const lastChar = word.charCodeAt(word.length - 1);
+  if (lastChar >= 0xac00 && lastChar <= 0xd7a3) {
+    const hasJongseong = (lastChar - 0xac00) % 28 > 0;
+    return hasJongseong ? "이" : "가";
+  }
+  return "이(가)";
+}
+
 export function RecentFoodGroupsSection({
   recentFoodGroups,
   hasRecentRecommendations,
@@ -37,6 +46,7 @@ export function RecentFoodGroupsSection({
   const missingGroups = ALL_FOOD_GROUPS.filter((g) => !recentGroups.has(g));
   const firstMissing = missingGroups[0];
   const emoji = firstMissing ? FOOD_GROUP_EMOJIS[firstMissing] || "🥗" : "🎉";
+  const particle = firstMissing ? getSubjectParticle(firstMissing) : "";
 
   return (
     <div className="mb-3 rounded-2xl border border-line bg-white p-4">
@@ -55,7 +65,7 @@ export function RecentFoodGroupsSection({
       </div>
       {missingGroups.length > 0 ? (
         <div className="mt-2.5 text-[12.5px] text-coral-deep">
-          {emoji} 최근 3일 동안 {firstMissing}이(가) 없었어요. 오늘은 {firstMissing} 메뉴를 추천해볼까요?
+          {emoji} 최근 3일 동안 {firstMissing}{particle} 없었어요. 오늘은 {firstMissing} 메뉴를 추천해볼까요?
         </div>
       ) : (
         <div className="mt-2.5 text-[12.5px] text-[#2E8F5D]">

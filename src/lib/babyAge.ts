@@ -82,3 +82,49 @@ export function getDetailedStageLabel(months: number): string {
   return "어린이 가족식 (7세 이상)";
 }
 
+/**
+ * 아이의 현재 월령과 레시피 종류에 맞춰 자연스러운 배지 텍스트를 생성한다.
+ * 예: 73개월(만 6세) 아이에게 "18~23개월 유아식" 대신 "어린이 성장식 · 키즈 반찬" 표시
+ */
+export function getRecipeBadgeLabel(
+  recipe: { minAgeStage: AgeStage; menuType?: string | null },
+  ageMonths: number
+): string {
+  const menuTypeLabel: Record<string, string> = {
+    rice: "한그릇 밥",
+    soup: "국/탕",
+    stew: "조림/반찬",
+    pancake: "영양 전",
+    meatball: "키즈 반찬",
+    noodle: "면 요리",
+    finger_food: "영양 반찬",
+    snack: "간식",
+    egg: "계란 요리",
+    porridge: "영양죽",
+  };
+  const typeStr = (recipe.menuType && menuTypeLabel[recipe.menuType]) || "맞춤 요리";
+
+  if (ageMonths >= 24) {
+    if (ageMonths >= 60) {
+      return `어린이 성장식 · ${typeStr}`;
+    }
+    if (ageMonths >= 36) {
+      return `키즈 성장식 · ${typeStr}`;
+    }
+    return `완료기 유아식 · ${typeStr}`;
+  }
+
+  const stageLabels: Record<AgeStage, string> = {
+    "0-5": "이유식 준비기",
+    "6-8": "초기/중기 이유식",
+    "9-11": "후기 이유식",
+    "12-17": "유아식 초기",
+    "18-23": "유아식",
+    "24+": "어린이 키즈식",
+  };
+
+  const stageText = stageLabels[recipe.minAgeStage] || `${recipe.minAgeStage}개월`;
+  return `${stageText} · ${typeStr}`;
+}
+
+
